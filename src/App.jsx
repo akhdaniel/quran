@@ -6,6 +6,16 @@ const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const STORAGE_PREFIX = "analysis-";
 const API_KEY_STORAGE = "deepseek-api-key";
 
+// Priority: env var > localStorage
+const ENV_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || "";
+
+function getApiKey() {
+  if (ENV_API_KEY && ENV_API_KEY !== "sk-your-deepseek-api-key-here") {
+    return ENV_API_KEY;
+  }
+  return localStorage.getItem(API_KEY_STORAGE) || "";
+}
+
 function App() {
   const [surahs, setSurahs] = useState([]);
   const [currentSurah, setCurrentSurah] = useState(null);
@@ -16,8 +26,11 @@ function App() {
   const [jumpValue, setJumpValue] = useState("");
   const [analysis, setAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [showApiModal, setShowApiModal] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [apiStatus, setApiStatus] = useState(
+    getApiKey() ? "ready" : "missing"
+  );
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [keyInput, setKeyInput] = useState("");
   const prevFn = useRef();
   const nextFn = useRef();
   const analysisRef = useRef(null);
@@ -113,8 +126,6 @@ function App() {
     loadSurah(nomor);
   };
 
-  const getApiKey = () => localStorage.getItem(API_KEY_STORAGE);
-
   const buildAnalysisPrompt = (arab, translation, latin) => {
     return `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia:
 
@@ -137,8 +148,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
   const handleAnalyze = async () => {
     const key = getApiKey();
     if (!key) {
-      setApiKeyInput("");
-      setShowApiModal(true);
+      setShowKeyInput(true);
       return;
     }
 
@@ -181,7 +191,8 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
       }
 
       const data = await res.json();
-      const result = data.choices?.[0]?.message?.content || "Tidak ada respons.";
+      const result =
+        data.choices?.[0]?.message?.content || "Tidak ada respons.";
 
       // Cache the result
       const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
@@ -190,7 +201,10 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
 
       // Scroll to analysis
       setTimeout(() => {
-        analysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        analysisRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     } catch (err) {
       setAnalysis(`**Error:** ${err.message}`);
@@ -199,12 +213,12 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
     }
   };
 
-  const handleSaveApiKey = () => {
-    const trimmed = apiKeyInput.trim();
+  const handleSaveKey = () => {
+    const trimmed = keyInput.trim();
     if (trimmed) {
       localStorage.setItem(API_KEY_STORAGE, trimmed);
-      setShowApiModal(false);
-      // Trigger analysis after saving key
+      setApiStatus("ready");
+      setShowKeyInput(false);
       setTimeout(() => handleAnalyze(), 100);
     }
   };
@@ -215,22 +229,16 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
     setAnalysis(null);
   };
 
-  // Simple markdown-to-HTML renderer for analysis text
+  // Simple markdown-to-HTML renderer
   const renderAnalysis = (text) => {
     if (!text) return null;
-    // Bold **text**
     let html = text
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      // Italic *text*
       .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      // Code blocks
       .replace(/```(\w*)\n?([\s\S]*?)```/g, "<pre><code>$2</code></pre>")
-      // Inline code
       .replace(/`([^`]+)`/g, "<code>$1</code>")
-      // Line breaks
       .replace(/\n\n/g, "</p><p>")
       .replace(/\n/g, "<br/>");
-
     return `<p>${html}</p>`;
   };
 
@@ -264,19 +272,21 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
         </select>
       </div>
 
-      {/* Settings icon */}
-      <div className="settings-bar">
-        <button
-          className="settings-btn"
-          onClick={() => {
-            setApiKeyInput(getApiKey() || "");
-            setShowApiModal(true);
-          }}
-          title="Pengaturan API Key"
-        >
-          ⚙️
-        </button>
-      </div>
+      {/* API Status Bar */}
+      {apiStatus === "missing" && (
+        <div className="api-status-bar">
+          <span>🔑 DeepSeek API key belum dikonfigurasi</span>
+          <button
+            className="api-set-btn"
+            onClick={() => {
+              setKeyInput(localStorage.getItem(API_KEY_STORAGE) || "");
+              setShowKeyInput(true);
+            }}
+          >
+            Set Key
+          </button>
+        </div>
+      )}
 
       {/* Main Card */}
       <main className="main-card">
@@ -302,7 +312,10 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
         )}
 
         {/* Ayat Card */}
-        <div className="ayat-card" key={`${currentSurah?.nomor}-${currentAyat}`}>
+        <div
+          className="ayat-card"
+          key={`${currentSurah?.nomor}-${currentAyat}`}
+        >
           <div className="ayat-number">{ayat.nomor || currentAyat}</div>
           <div className="ayat-arabic">{ayat.teksArab}</div>
           <div className="ayat-translation">{ayat.teksIndonesia}</div>
@@ -403,44 +416,44 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
         </div>
       </main>
 
-      {/* API Key Modal */}
-      {showApiModal && (
-        <div className="modal-overlay" onClick={() => setShowApiModal(false)}>
+      {/* API Key Input Sheet (slide up) */}
+      {showKeyInput && (
+        <div className="modal-overlay" onClick={() => setShowKeyInput(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">🔑 API Key DeepSeek</h3>
+            <h3 className="modal-title">🔑 DeepSeek API Key</h3>
             <p className="modal-desc">
-              Masukkan DeepSeek API key untuk fitur analisa ayat. Key disimpan
-              di browser kamu.
+              Masukkan API key untuk fitur analisa ayat. Bisa juga pakai env
+              <code> VITE_DEEPSEEK_API_KEY</code> di file <code>.env</code>.
             </p>
             <input
               type="password"
               className="modal-input"
               placeholder="sk-xxxxxxxxxxxxxxxx"
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
               autoFocus
             />
             <p className="modal-hint">
-              Belum punya? Daftar di{" "}
+              Belum punya?{" "}
               <a
                 href="https://platform.deepseek.com/api_keys"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                platform.deepseek.com
+                Daftar di sini
               </a>
             </p>
             <div className="modal-actions">
               <button
                 className="modal-cancel"
-                onClick={() => setShowApiModal(false)}
+                onClick={() => setShowKeyInput(false)}
               >
                 Batal
               </button>
               <button
                 className="modal-save"
-                onClick={handleSaveApiKey}
-                disabled={!apiKeyInput.trim()}
+                onClick={handleSaveKey}
+                disabled={!keyInput.trim()}
               >
                 Simpan
               </button>

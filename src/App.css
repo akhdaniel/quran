@@ -1,0 +1,341 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", "Poppins", system-ui, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  min-height: 100vh;
+  color: #e2e8f0;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  font-size: 1.25rem;
+  color: #94a3b8;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 16px 0 8px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f7d44a, #eab308);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Surah Selector */
+.surah-selector {
+  padding: 8px 0 16px;
+}
+
+.surah-select {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 1rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+}
+
+.surah-select:focus {
+  border-color: #eab308;
+}
+
+.surah-select option {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* Main Card */
+.main-card {
+  flex: 1;
+  background: linear-gradient(180deg, #1e293b 0%, #1a2332 100%);
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Surah Header */
+.surah-header {
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #334155;
+  margin-bottom: 16px;
+}
+
+.surah-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.surah-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.surah-arabic {
+  font-size: 1.5rem;
+  font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
+  color: #eab308;
+}
+
+.surah-meta {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Bismillah */
+.bismillah {
+  text-align: center;
+  padding: 12px 0;
+  margin-bottom: 12px;
+}
+
+.bismillah-text {
+  font-size: 1.6rem;
+  font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
+  color: #cbd5e1;
+  opacity: 0.9;
+}
+
+/* Ayat Card */
+.ayat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px 0;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ayat-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #eab308;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 auto 20px;
+}
+
+.ayat-arabic {
+  text-align: center;
+  font-size: 2rem;
+  line-height: 1.7;
+  font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
+  color: #f8fafc;
+  direction: rtl;
+  padding: 0 8px;
+  margin-bottom: 16px;
+}
+
+.ayat-translation {
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  padding: 0 8px;
+  margin-bottom: 8px;
+}
+
+.ayat-latin {
+  text-align: center;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #64748b;
+  font-style: italic;
+  padding: 0 8px;
+}
+
+/* Progress */
+.progress-bar-wrapper {
+  padding: 12px 0;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #334155;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #eab308, #facc15);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Navigation */
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #334155;
+}
+
+.nav-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #334155;
+  border-color: #eab308;
+}
+
+.nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.jump-form {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.jump-input {
+  width: 64px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.jump-input:focus {
+  border-color: #eab308;
+}
+
+.jump-input::placeholder {
+  color: #475569;
+  font-size: 0.7rem;
+}
+
+/* Hide spinners for number input */
+.jump-input::-webkit-inner-spin-button,
+.jump-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.jump-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.jump-btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #eab308;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.jump-btn:hover {
+  background: #facc15;
+}
+
+/* Keyboard shortcuts text */
+@media (max-width: 480px) {
+  .app {
+    padding: 8px;
+  }
+
+  .main-card {
+    padding: 16px 12px;
+  }
+
+  .ayat-arabic {
+    font-size: 1.6rem;
+  }
+
+  .navigation {
+    flex-wrap: wrap;
+  }
+
+  .jump-input {
+    width: 50px;
+  }
+
+  .nav-btn {
+    font-size: 0.8rem;
+    padding: 10px 6px;
+  }
+}

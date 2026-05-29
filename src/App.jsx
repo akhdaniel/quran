@@ -2,11 +2,16 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
 
 const API_BASE = "https://equran.id/api/v2";
+const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const STORAGE_PREFIX = "analysis-";
 
-// Detect if running on Vercel (serverless proxy available)
-const isVercel = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-const PROXY_URL = "/api/analyze";
+// Baca API key: env var > localStorage
+const ENV_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || "";
+
+function getApiKey() {
+  if (ENV_KEY && !ENV_KEY.includes("sk-your")) return ENV_KEY;
+  return localStorage.getItem("deepseek-api-key") || "";
+}
 
 function App() {
   const [surahs, setSurahs] = useState([]);
@@ -18,12 +23,9 @@ function App() {
   const [jumpValue, setJumpValue] = useState("");
   const [analysis, setAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
-  // On Vercel: check if proxy is configured by hitting a health endpoint
-  // On local: check env var
-  const apiAvailableRef = useRef(false);
-  const [apiStatus, setApiStatus] = useState("checking");
-  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [showKeyModal, setShowKeyModal] = useState(false);
   const [keyInput, setKeyInput] = useState("");
+  const hasKey = !!getApiKey();
   const prevFn = useRef();
   const nextFn = useRef();
   const analysisRef = useRef(null);
@@ -44,35 +46,8 @@ function App() {
     }
   }, [surahNomor, currentAyat]);
 
-  // Check API availability & fetch daftar surat
+  // Fetch daftar surat
   useEffect(() => {
-    // Cek proxy health dulu
-    if (isVercel) {
-      fetch(PROXY_URL, { method: "OPTIONS" })
-        .then(() => {
-          apiAvailableRef.current = true;
-          setApiStatus("ready");
-        })
-        .catch(() => {
-          // Proxy gak available, fallback ke localStorage
-          apiAvailableRef.current = false;
-          const localKey = localStorage.getItem("deepseek-api-key");
-          setApiStatus(localKey ? "ready" : "missing");
-        });
-    } else {
-      // Local: cek env var
-      const envKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-      if (envKey && envKey !== "sk-your-deepseek-api-key-here") {
-        apiAvailableRef.current = true;
-        setApiStatus("ready");
-      } else {
-        const localKey = localStorage.getItem("deepseek-api-key");
-        apiAvailableRef.current = false;
-        setApiStatus(localKey ? "ready" : "missing");
-      }
-    }
-
-    // Fetch surat
     fetch(`${API_BASE}/surat`)
       .then((r) => r.json())
       .then((d) => {
@@ -157,32 +132,23 @@ ${translation}
 
 ${latin ? `**Latin:** ${latin}` : ""}
 
-Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai <b> atau HTML):
+Berikan analisis dengan format berikut (gunakan markdown sederhana):
 
-1. **Terjemahan Kata Per Kata** — setiap kata Arab diurai dengan arti per katanya dalam Bahasa Indonesia
+1. **Terjemahan Kata Per Kata** — setiap kata Arab diurai dengan arti per katanya
 2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
 3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
 4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
   };
 
   const handleAnalyze = async () => {
-    if (!ayat.teksArab) return;
-
-    // Di local dev tanpa env var, fallback ke localStorage
-    if (!isVercel) {
-      const envKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-      const localKey = localStorage.getItem("deepseek-api-key");
-      if (
-        !envKey ||
-        envKey === "sk-your-deepseek-api-key-here" ||
-        envKey === "sk-xxx…xxxx"
-      ) {
-        if (!localKey) {
-          setShowKeyInput(true);
-          return;
-        }
-      }
+    const key = getApiKey();
+    if (!key) {
+      setKeyInput("");
+      setShowKeyModal(true);
+      return;
     }
+
+    if (!ayat.teksArab) return;
 
     setAnalyzing(true);
     setAnalysis(null);
@@ -194,62 +160,48 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
         ayat.teksLatin
       );
 
-      const messages = [
-        {
-          role: "system",
-          content:
-            "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab dalam Bahasa Indonesia yang baik dan santai namun ilmiah.",
+      const res = await fetch(DEEPSEEK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
         },
-        { role: "user", content: prompt },
-      ];
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab dalam Bahasa Indonesia yang baik dan santai namun ilmiah.",
+            },
+            { role: "user", content: prompt },
+          ],
+          max_tokens: 2000,
+          temperature: 0.3,
+        }),
+      });
 
-      let result;
-
-      if (isVercel) {
-        // Pakai Vercel proxy (CORS-safe)
-        const res = await fetch(PROXY_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages, max_tokens: 2000, temperature: 0.3 }),
-        });
-        if (!res.ok) {
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`;
+        try {
           const errData = await res.json();
-          throw new Error(errData.error || `HTTP ${res.status}`);
+          errMsg = errData.error?.message || errMsg;
+        } catch {
+          const txt = await res.text().catch(() => "");
+          if (txt) errMsg = txt;
         }
-        const data = await res.json();
-        result = data.choices?.[0]?.message?.content || "Tidak ada respons.";
-      } else {
-        // Local: langsung ke DeepSeek (env atau localStorage)
-        const key =
-          import.meta.env.VITE_DEEPSEEK_API_KEY ||
-          localStorage.getItem("deepseek-api-key");
-        const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${key}`,
-          },
-          body: JSON.stringify({
-            model: "deepseek-chat",
-            messages,
-            max_tokens: 2000,
-            temperature: 0.3,
-          }),
-        });
-        if (!res.ok) {
-          const errData = await res.text();
-          throw new Error(`API error ${res.status}: ${errData}`);
-        }
-        const data = await res.json();
-        result = data.choices?.[0]?.message?.content || "Tidak ada respons.";
+        throw new Error(errMsg);
       }
 
-      // Cache the result
+      const data = await res.json();
+      const result =
+        data.choices?.[0]?.message?.content || "Tidak ada respons.";
+
+      // Cache
       const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
       localStorage.setItem(cacheKey, JSON.stringify(result));
       setAnalysis(result);
 
-      // Scroll to analysis
       setTimeout(() => {
         analysisRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -257,7 +209,9 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
         });
       }, 100);
     } catch (err) {
-      setAnalysis(`**Error:** ${err.message}`);
+      setAnalysis(
+        `**Error:** ${err.message}\n\n> 💡 Pastikan \`VITE_DEEPSEEK_API_KEY\` sudah di-set di Vercel env vars, atau masukkan key manual lewat tombol ⚙️.`
+      );
     } finally {
       setAnalyzing(false);
     }
@@ -267,8 +221,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
     const trimmed = keyInput.trim();
     if (trimmed) {
       localStorage.setItem("deepseek-api-key", trimmed);
-      setApiStatus("ready");
-      setShowKeyInput(false);
+      setShowKeyModal(false);
       setTimeout(() => handleAnalyze(), 100);
     }
   };
@@ -279,7 +232,6 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
     setAnalysis(null);
   };
 
-  // Simple markdown-to-HTML renderer
   const renderAnalysis = (text) => {
     if (!text) return null;
     let html = text
@@ -304,7 +256,19 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
     <div className="app">
       {/* Header */}
       <header className="header">
-        <h1 className="title">Al-Qur&apos;an</h1>
+        <div className="header-row">
+          <h1 className="title">Al-Qur&apos;an</h1>
+          <button
+            className="key-btn"
+            onClick={() => {
+              setKeyInput(getApiKey() || "");
+              setShowKeyModal(true);
+            }}
+            title={hasKey ? "Ganti API Key" : "Set API Key"}
+          >
+            {hasKey ? "🔑" : "⚙️"}
+          </button>
+        </div>
       </header>
 
       {/* Surah Selector */}
@@ -321,22 +285,6 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
           ))}
         </select>
       </div>
-
-      {/* API Status Bar */}
-      {apiStatus === "missing" && (
-        <div className="api-status-bar">
-          <span>🔑 DeepSeek API key belum dikonfigurasi</span>
-          <button
-            className="api-set-btn"
-            onClick={() => {
-              setKeyInput(localStorage.getItem("deepseek-api-key") || "");
-              setShowKeyInput(true);
-            }}
-          >
-            Set Key
-          </button>
-        </div>
-      )}
 
       {/* Main Card */}
       <main className="main-card">
@@ -372,7 +320,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
           <div className="ayat-latin">{ayat.teksLatin}</div>
         </div>
 
-        {/* Analyze Button */}
+        {/* Analyze */}
         <div className="analyze-section">
           {!analysis && !analyzing && (
             <button className="analyze-btn" onClick={handleAnalyze}>
@@ -387,7 +335,6 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
             </div>
           )}
 
-          {/* Analysis Result */}
           {analysis && (
             <div className="analysis-result" ref={analysisRef}>
               <div className="analysis-header">
@@ -466,14 +413,14 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
         </div>
       </main>
 
-      {/* API Key Input Sheet (slide up) */}
-      {showKeyInput && (
-        <div className="modal-overlay" onClick={() => setShowKeyInput(false)}>
+      {/* API Key Modal */}
+      {showKeyModal && (
+        <div className="modal-overlay" onClick={() => setShowKeyModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">🔑 DeepSeek API Key</h3>
             <p className="modal-desc">
-              Masukkan API key untuk fitur analisa ayat. Bisa juga pakai env
-              <code> VITE_DEEPSEEK_API_KEY</code> di file <code>.env</code>.
+              Masukkan API key untuk fitur analisa ayat. Bisa juga pakai env{" "}
+              <code>VITE_DEEPSEEK_API_KEY</code> di Vercel dashboard.
             </p>
             <input
               type="password"
@@ -496,7 +443,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
             <div className="modal-actions">
               <button
                 className="modal-cancel"
-                onClick={() => setShowKeyInput(false)}
+                onClick={() => setShowKeyModal(false)}
               >
                 Batal
               </button>

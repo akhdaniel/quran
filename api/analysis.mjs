@@ -63,11 +63,16 @@ export default async function handler(req, res) {
     const key = `${PREFIX}${surah}-${ayat}.json`;
 
     try {
-      const blob = await get(key, { access: "private", token });
-      if (!blob) {
+      const result = await get(key, { access: "private", token });
+      if (!result) {
         return res.status(404).json({ error: "not found" });
       }
-      const text = await blob.text();
+      // Baca dari stream (SDK return { stream, blob })
+      const chunks = [];
+      for await (const chunk of result.stream) {
+        chunks.push(chunk);
+      }
+      const text = Buffer.concat(chunks).toString("utf-8");
       return res.status(200).json(JSON.parse(text));
     } catch (err) {
       return res.status(404).json({ error: "GET: " + err.message });

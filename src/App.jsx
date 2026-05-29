@@ -2,16 +2,41 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
 
 const API_BASE = "https://equran.id/api/v2";
+const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
+const STORAGE_PREFIX = "analysis-";
+const API_KEY_STORAGE = "deepseek-api-key";
 
 function App() {
   const [surahs, setSurahs] = useState([]);
   const [currentSurah, setCurrentSurah] = useState(null);
+  const [surahNomor, setSurahNomor] = useState(1);
   const [verses, setVerses] = useState([]);
   const [currentAyat, setCurrentAyat] = useState(1);
   const [loading, setLoading] = useState(true);
   const [jumpValue, setJumpValue] = useState("");
+  const [analysis, setAnalysis] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [showApiModal, setShowApiModal] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState("");
   const prevFn = useRef();
   const nextFn = useRef();
+  const analysisRef = useRef(null);
+
+  // Load cached analysis when ayah changes
+  useEffect(() => {
+    if (!surahNomor || !currentAyat) return;
+    const key = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
+    const cached = localStorage.getItem(key);
+    if (cached) {
+      try {
+        setAnalysis(JSON.parse(cached));
+      } catch {
+        setAnalysis(cached);
+      }
+    } else {
+      setAnalysis(null);
+    }
+  }, [surahNomor, currentAyat]);
 
   // Fetch daftar surat
   useEffect(() => {
@@ -20,8 +45,8 @@ function App() {
       .then((d) => {
         if (d.code === 200) {
           setSurahs(d.data);
-          // Auto-load surah pertama
           const first = d.data[0];
+          setSurahNomor(first.nomor);
           loadSurah(first.nomor);
         }
       })
@@ -32,12 +57,14 @@ function App() {
     setLoading(true);
     setCurrentAyat(1);
     setJumpValue("");
+    setAnalysis(null);
     fetch(`${API_BASE}/surat/${nomor}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.code === 200) {
           setCurrentSurah(d.data);
           setVerses(d.data.ayat);
+          setSurahNomor(nomor);
         }
       })
       .catch(console.error)
@@ -86,6 +113,127 @@ function App() {
     loadSurah(nomor);
   };
 
+  const getApiKey = () => localStorage.getItem(API_KEY_STORAGE);
+
+  const buildAnalysisPrompt = (arab, translation, latin) => {
+    return `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia:
+
+**Ayat:**
+${arab}
+
+**Terjemahan:**
+${translation}
+
+${latin ? `**Latin:** ${latin}` : ""}
+
+Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai <b> atau HTML):
+
+1. **Terjemahan Kata Per Kata** — setiap kata Arab diurai dengan arti per katanya dalam Bahasa Indonesia
+2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
+3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
+4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
+  };
+
+  const handleAnalyze = async () => {
+    const key = getApiKey();
+    if (!key) {
+      setApiKeyInput("");
+      setShowApiModal(true);
+      return;
+    }
+
+    if (!ayat.teksArab) return;
+
+    setAnalyzing(true);
+    setAnalysis(null);
+
+    try {
+      const prompt = buildAnalysisPrompt(
+        ayat.teksArab,
+        ayat.teksIndonesia,
+        ayat.teksLatin
+      );
+
+      const res = await fetch(DEEPSEEK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab dalam Bahasa Indonesia yang baik dan santai namun ilmiah.",
+            },
+            { role: "user", content: prompt },
+          ],
+          max_tokens: 2000,
+          temperature: 0.3,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.text();
+        throw new Error(`API error ${res.status}: ${errData}`);
+      }
+
+      const data = await res.json();
+      const result = data.choices?.[0]?.message?.content || "Tidak ada respons.";
+
+      // Cache the result
+      const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
+      localStorage.setItem(cacheKey, JSON.stringify(result));
+      setAnalysis(result);
+
+      // Scroll to analysis
+      setTimeout(() => {
+        analysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } catch (err) {
+      setAnalysis(`**Error:** ${err.message}`);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleSaveApiKey = () => {
+    const trimmed = apiKeyInput.trim();
+    if (trimmed) {
+      localStorage.setItem(API_KEY_STORAGE, trimmed);
+      setShowApiModal(false);
+      // Trigger analysis after saving key
+      setTimeout(() => handleAnalyze(), 100);
+    }
+  };
+
+  const clearAnalysis = () => {
+    const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
+    localStorage.removeItem(cacheKey);
+    setAnalysis(null);
+  };
+
+  // Simple markdown-to-HTML renderer for analysis text
+  const renderAnalysis = (text) => {
+    if (!text) return null;
+    // Bold **text**
+    let html = text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      // Italic *text*
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      // Code blocks
+      .replace(/```(\w*)\n?([\s\S]*?)```/g, "<pre><code>$2</code></pre>")
+      // Inline code
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      // Line breaks
+      .replace(/\n\n/g, "</p><p>")
+      .replace(/\n/g, "<br/>");
+
+    return `<p>${html}</p>`;
+  };
+
   if (loading) {
     return (
       <div className="app">
@@ -114,6 +262,20 @@ function App() {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Settings icon */}
+      <div className="settings-bar">
+        <button
+          className="settings-btn"
+          onClick={() => {
+            setApiKeyInput(getApiKey() || "");
+            setShowApiModal(true);
+          }}
+          title="Pengaturan API Key"
+        >
+          ⚙️
+        </button>
       </div>
 
       {/* Main Card */}
@@ -145,6 +307,52 @@ function App() {
           <div className="ayat-arabic">{ayat.teksArab}</div>
           <div className="ayat-translation">{ayat.teksIndonesia}</div>
           <div className="ayat-latin">{ayat.teksLatin}</div>
+        </div>
+
+        {/* Analyze Button */}
+        <div className="analyze-section">
+          {!analysis && !analyzing && (
+            <button className="analyze-btn" onClick={handleAnalyze}>
+              🤖 Analisa Ayat
+            </button>
+          )}
+
+          {analyzing && (
+            <div className="analyzing">
+              <div className="spinner" />
+              <span>Menganalisis ayat dengan AI...</span>
+            </div>
+          )}
+
+          {/* Analysis Result */}
+          {analysis && (
+            <div className="analysis-result" ref={analysisRef}>
+              <div className="analysis-header">
+                <span className="analysis-title">📊 Analisa Ayat</span>
+                <div className="analysis-actions">
+                  <button
+                    className="analysis-regen-btn"
+                    onClick={handleAnalyze}
+                    disabled={analyzing}
+                    title="Analisa ulang"
+                  >
+                    🔄
+                  </button>
+                  <button
+                    className="analysis-close-btn"
+                    onClick={clearAnalysis}
+                    title="Tutup"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <div
+                className="analysis-body"
+                dangerouslySetInnerHTML={{ __html: renderAnalysis(analysis) }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Progress */}
@@ -194,6 +402,52 @@ function App() {
           </button>
         </div>
       </main>
+
+      {/* API Key Modal */}
+      {showApiModal && (
+        <div className="modal-overlay" onClick={() => setShowApiModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">🔑 API Key DeepSeek</h3>
+            <p className="modal-desc">
+              Masukkan DeepSeek API key untuk fitur analisa ayat. Key disimpan
+              di browser kamu.
+            </p>
+            <input
+              type="password"
+              className="modal-input"
+              placeholder="sk-xxxxxxxxxxxxxxxx"
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              autoFocus
+            />
+            <p className="modal-hint">
+              Belum punya? Daftar di{" "}
+              <a
+                href="https://platform.deepseek.com/api_keys"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                platform.deepseek.com
+              </a>
+            </p>
+            <div className="modal-actions">
+              <button
+                className="modal-cancel"
+                onClick={() => setShowApiModal(false)}
+              >
+                Batal
+              </button>
+              <button
+                className="modal-save"
+                onClick={handleSaveApiKey}
+                disabled={!apiKeyInput.trim()}
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

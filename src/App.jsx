@@ -60,11 +60,24 @@ function App() {
     // Fallback ke localStorage
     const cached = localStorage.getItem(localKey);
     if (cached) {
+      let content;
       try {
-        setAnalysis(JSON.parse(cached));
+        content = JSON.parse(cached);
       } catch {
-        setAnalysis(cached);
+        content = cached;
       }
+      setAnalysis(content);
+
+      // Sync ke backend (fire & forget) biar user lain ikut lihat
+      fetch("/api/analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          surah,
+          ayat,
+          content,
+        }),
+      }).catch(() => {});
     } else {
       setAnalysis(null);
     }

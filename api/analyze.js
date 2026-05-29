@@ -1,7 +1,7 @@
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 
-export default async function handler(req, res) {
-  // CORS headers
+module.exports = async (req, res) => {
+  // CORS headers (for local dev cross-origin testing)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -14,12 +14,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const apiKey = process.env.VITE_DEEPSEEK_API_KEY;
+  const apiKey = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
   if (!apiKey || apiKey === "sk-your-deepseek-api-key-here") {
-    return res.status(400).json({ error: "API key not configured" });
+    return res.status(400).json({ error: "DEEPSEEK_API_KEY not set in Vercel env vars" });
   }
 
-  const { messages, model, max_tokens, temperature } = req.body;
+  const { messages, model, max_tokens, temperature } = req.body || {};
 
   try {
     const response = await fetch(DEEPSEEK_URL, {
@@ -46,4 +46,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};

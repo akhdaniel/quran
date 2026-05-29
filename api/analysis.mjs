@@ -1,6 +1,5 @@
-// API /api/analysis — simpan & baca analisa ayat via Vercel Blob
-
-const BLOB_API = "https://vercel.com/api/blob";
+// API /api/analysis — simpan & baca analisa ayat via @vercel/blob SDK
+import { put, get } from "@vercel/blob";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
@@ -17,19 +16,14 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status: "alive",
       token_exists: !!token,
-      token_prefix: (token || "").substring(0, 12),
+      token_prefix: (token || "").substring(0, 15),
       node: process.version,
-      file: "api/analysis.mjs",
     });
   }
 
   if (!token) {
     return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
   }
-
-  // Extract storeId dari token: vercel_blob_rw_<random>_<storeId>
-  const parts = token.split("_");
-  const storeId = parts[parts.length - 1];
 
   const PREFIX = "analysis/";
 
@@ -40,31 +34,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "surah, ayat, content required" });
     }
 
-    const pathname = `${PREFIX}${surah}-${ayat}.json`;
-    const data = JSON.stringify({
-      surah, ayat, content,
-      updatedAt: new Date().toISOString(),
-    });
+    const key = `${PREFIX}${surah}-${ayat}.json`;
 
     try {
-      const params = new URLSearchParams({ pathname, addRandomSuffix: "false" });
-      const resp = await fetch(`${BLOB_API}/?${params.toString()}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: data,
+      const result = await put(key, JSON.stringify({
+        surah, ayat, content,
+        updatedAt: new Date().toISOString(),
+      }), {
+        access: "public",
+        addRandomSuffix: false,
+        token,
       });
 
-      if (!resp.ok) {
-        const errText = await resp.text().catch(() => "");
-        return res.status(resp.status).json({ error: `PUT failed (${resp.status}): ${errText}` });
-      }
-
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, url: result.url, downloadUrl: result.downloadUrl });
     } catch (err) {
-      return res.status(500).json({ error: "PUT error: " + err.message });
+      console.error("PUT error:", err);
+      return res.status(500).json({ error: "PUT: " + err.message });
     }
   }
 
@@ -75,26 +60,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "surah and ayat required" });
     }
 
-    const pathname = `${PREFIX}${surah}-${ayat}.json`;
-    const blobUrl = `https://${storeId}.public.blob.vercel-storage.com/${pathname}`;
+    const key = `${PREFIX}${surah}-${ayat}.json`;
 
     try {
-      const resp = await fetch(blobUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (resp.status === 404) {
+      const blob = await get(key, { access: "public", token });
+      if (!blob) {
         return res.status(404).json({ error: "not found" });
       }
-
-      if (!resp.ok) {
-        return res.status(resp.status).json({ error: `GET failed: ${resp.status}` });
-      }
-
-      const text = await resp.text();
+      const text = await blob.text();
       return res.status(200).json(JSON.parse(text));
     } catch (err) {
-      return res.status(404).json({ error: "GET error: " + err.message });
+      return res.status(404).json({ error: "GET: " + err.message });
     }
   }
 

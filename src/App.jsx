@@ -32,11 +32,33 @@ function App() {
   const nextFn = useRef();
   const analysisRef = useRef(null);
 
-  // Load cached analysis when ayah changes
+  // Load analysis from backend (or localStorage fallback) when ayah changes
   useEffect(() => {
     if (!surahNomor || !currentAyat) return;
-    const key = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
-    const cached = localStorage.getItem(key);
+    loadAnalysis(surahNomor, currentAyat);
+  }, [surahNomor, currentAyat]);
+
+  const loadAnalysis = async (surah, ayat) => {
+    const localKey = `${STORAGE_PREFIX}${surah}-${ayat}`;
+
+    // Coba dari API dulu
+    try {
+      const res = await fetch(`/api/analysis?surah=${surah}&ayat=${ayat}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.content) {
+          setAnalysis(data.content);
+          // Sync ke localStorage
+          localStorage.setItem(localKey, JSON.stringify(data.content));
+          return;
+        }
+      }
+    } catch {
+      // API gagal, fallback
+    }
+
+    // Fallback ke localStorage
+    const cached = localStorage.getItem(localKey);
     if (cached) {
       try {
         setAnalysis(JSON.parse(cached));
@@ -46,7 +68,7 @@ function App() {
     } else {
       setAnalysis(null);
     }
-  }, [surahNomor, currentAyat]);
+  };
 
   // Fetch daftar surat
   useEffect(() => {
@@ -199,10 +221,21 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
       const result =
         data.choices?.[0]?.message?.content || "Tidak ada respons.";
 
-      // Cache
+      // Cache (local + backend)
       const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
       localStorage.setItem(cacheKey, JSON.stringify(result));
       setAnalysis(result);
+
+      // Simpan ke backend (fire & forget)
+      fetch("/api/analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          surah: surahNomor,
+          ayat: currentAyat,
+          content: result,
+        }),
+      }).catch(() => {});
 
       setTimeout(() => {
         analysisRef.current?.scrollIntoView({

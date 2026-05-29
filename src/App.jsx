@@ -77,7 +77,9 @@ function App() {
           ayat,
           content,
         }),
-      }).catch(() => {});
+      }).then((r) => {
+        if (!r.ok) console.warn("Backend sync failed:", r.status);
+      }).catch((e) => console.warn("Backend sync error:", e.message));
     } else {
       setAnalysis(null);
     }
@@ -248,7 +250,9 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
           ayat: currentAyat,
           content: result,
         }),
-      }).catch(() => {});
+      }).then((r) => {
+        if (!r.ok) console.warn("Backend save failed:", r.status);
+      }).catch((e) => console.warn("Backend save error:", e.message));
 
       setTimeout(() => {
         analysisRef.current?.scrollIntoView({

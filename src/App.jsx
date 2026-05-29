@@ -27,6 +27,10 @@ function App() {
   const [analyzing, setAnalyzing] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [keyInput, setKeyInput] = useState("");
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const chatRef = useRef(null);
   const hasKey = !!getApiKey();
   const prevFn = useRef();
   const nextFn = useRef();
@@ -80,8 +84,21 @@ function App() {
       }).then((r) => {
         if (!r.ok) console.warn("Backend sync failed:", r.status);
       }).catch((e) => console.warn("Backend sync error:", e.message));
+      // Also load chat history
+      const chatKey = `chat-${surah}-${ayat}`;
+      const chatCached = localStorage.getItem(chatKey);
+      if (chatCached) {
+        try {
+          setChatMessages(JSON.parse(chatCached));
+        } catch {
+          setChatMessages([]);
+        }
+      } else {
+        setChatMessages([]);
+      }
     } else {
       setAnalysis(null);
+      setChatMessages([]);
     }
   };
 
@@ -281,7 +298,77 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
   const clearAnalysis = () => {
     const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
     localStorage.removeItem(cacheKey);
+    localStorage.removeItem(`chat-${surahNomor}-${currentAyat}`);
     setAnalysis(null);
+    setChatMessages([]);
+  };
+
+  const sendChat = async () => {
+    const msg = chatInput.trim();
+    if (!msg || chatSending) return;
+
+    const key = getApiKey();
+    if (!key) {
+      setKeyInput("");
+      setShowKeyModal(true);
+      return;
+    }
+
+    const userMessage = { role: "user", content: msg };
+    const updated = [...chatMessages, userMessage];
+    setChatMessages(updated);
+    setChatInput("");
+    setChatSending(true);
+
+    try {
+      const systemPrompt = `Kamu adalah asisten ahli tafsir Al-Qur'an. Berikut adalah analisa ayat yang sudah dibuat:
+
+${analysis?.substring(0, 4000) || "(belum ada analisa)"}
+
+Jawab pertanyaan user dengan detail dan ilmiah dalam Bahasa Indonesia.`;
+
+      const apiMessages = [
+        { role: "system", content: systemPrompt },
+        ...updated.map((m) => ({ role: m.role, content: m.content })),
+      ];
+
+      const res = await fetch(DEEPSEEK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: apiMessages,
+          max_tokens: 1500,
+          temperature: 0.3,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || "Tidak ada respons.";
+
+      const finalMessages = [...updated, { role: "assistant", content: reply }];
+      setChatMessages(finalMessages);
+
+      // Simpan chat ke localStorage
+      const chatKey = `chat-${surahNomor}-${currentAyat}`;
+      localStorage.setItem(chatKey, JSON.stringify(finalMessages));
+
+      setTimeout(() => {
+        chatRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }, 100);
+    } catch (err) {
+      setChatMessages([
+        ...updated,
+        { role: "assistant", content: `**Error:** ${err.message}` },
+      ]);
+    } finally {
+      setChatSending(false);
+    }
   };
 
   // Markdown components with custom styling
@@ -464,6 +551,55 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
                 >
                   {analysis}
                 </Markdown>
+              </div>
+
+              {/* Chatbox */}
+              <div className="chat-section">
+                {chatMessages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`chat-bubble ${m.role === "user" ? "chat-user" : "chat-ai"}`}
+                  >
+                    <div className="chat-label">
+                      {m.role === "user" ? "Kamu" : "AI"}
+                    </div>
+                    <Markdown
+                      components={MarkdownComponents}
+                      remarkPlugins={[remarkGfm]}
+                    >
+                      {m.content}
+                    </Markdown>
+                  </div>
+                ))}
+                {chatSending && (
+                  <div className="chat-typing">
+                    <div className="spinner" />
+                    <span>Mengetik...</span>
+                  </div>
+                )}
+                <div className="chat-input-row">
+                  <input
+                    className="chat-input"
+                    placeholder="Tanya detail analisa..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChat();
+                      }
+                    }}
+                    disabled={chatSending}
+                  />
+                  <button
+                    className="chat-send-btn"
+                    onClick={sendChat}
+                    disabled={!chatInput.trim() || chatSending}
+                  >
+                    Kirim
+                  </button>
+                </div>
+                <div ref={chatRef} />
               </div>
             </div>
           )}

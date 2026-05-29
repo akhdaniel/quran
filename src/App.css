@@ -885,3 +885,34 @@ body {
     padding: 10px 14px;
   }
 }
+
+/* Top Navigation - lebih ringkas */
+.nav-top {
+  border-top: none !important;
+  padding: 0 0 12px 0 !important;
+  margin-bottom: 4px;
+}
+
+.nav-top .nav-btn {
+  padding: 8px 8px !important;
+  font-size: 0.82rem !important;
+}
+
+.nav-top .jump-input {
+  padding: 7px 6px !important;
+  width: 56px !important;
+}
+
+.nav-top .jump-btn {
+  padding: 7px 12px !important;
+}
+
+@media (max-width: 480px) {
+  .nav-top .nav-btn {
+    font-size: 0.75rem !important;
+    padding: 6px 4px !important;
+  }
+  .nav-top .jump-input {
+    width: 44px !important;
+  }
+}

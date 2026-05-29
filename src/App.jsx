@@ -490,6 +490,40 @@ Jawab langsung tanpa pendahuluan atau penutup. Berikan detail dan ilmiah dalam B
           </div>
         </div>
 
+        {/* Top Navigation */}
+        <div className="navigation nav-top">
+          <button
+            className="nav-btn"
+            onClick={prevAyat}
+            disabled={currentAyat <= 1}
+          >
+            &#8592; Sebelumnya
+          </button>
+
+          <form className="jump-form" onSubmit={handleJump}>
+            <input
+              type="number"
+              className="jump-input"
+              placeholder="Lompat..."
+              min={1}
+              max={totalAyat}
+              value={jumpValue}
+              onChange={(e) => setJumpValue(e.target.value)}
+            />
+            <button type="submit" className="jump-btn">
+              Pergi
+            </button>
+          </form>
+
+          <button
+            className="nav-btn"
+            onClick={nextAyat}
+            disabled={currentAyat >= totalAyat}
+          >
+            Selanjutnya &rarr;
+          </button>
+        </div>
+
         {/* Bismillah */}
         {currentSurah?.nomor !== 9 && currentSurah?.nomor !== 1 && (
           <div className="bismillah">

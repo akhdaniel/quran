@@ -178,7 +178,7 @@ function App() {
   };
 
   const buildAnalysisPrompt = (arab, translation, latin) => {
-    return `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia:
+    return `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia. Langsung ke analisis, tanpa pendahuluan atau penutup.
 
 **Ayat:**
 ${arab}
@@ -228,7 +228,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
             {
               role: "system",
               content:
-                "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab dalam Bahasa Indonesia yang baik dan santai namun ilmiah.",
+                "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab langsung tanpa pendahuluan atau penutup. Gunakan Bahasa Indonesia yang baik dan santai namun ilmiah.",
             },
             { role: "user", content: prompt },
           ],
@@ -325,7 +325,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
 
 ${analysis?.substring(0, 4000) || "(belum ada analisa)"}
 
-Jawab pertanyaan user dengan detail dan ilmiah dalam Bahasa Indonesia.`;
+Jawab langsung tanpa pendahuluan atau penutup. Berikan detail dan ilmiah dalam Bahasa Indonesia.`;
 
       const apiMessages = [
         { role: "system", content: systemPrompt },

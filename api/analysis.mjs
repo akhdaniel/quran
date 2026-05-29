@@ -41,7 +41,7 @@ export default async function handler(req, res) {
         surah, ayat, content,
         updatedAt: new Date().toISOString(),
       }), {
-        access: "public",
+        access: "private",
         addRandomSuffix: false,
         token,
       });
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     const key = `${PREFIX}${surah}-${ayat}.json`;
 
     try {
-      const blob = await get(key, { access: "public", token });
+      const blob = await get(key, { access: "private", token });
       if (!blob) {
         return res.status(404).json({ error: "not found" });
       }

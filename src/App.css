@@ -631,3 +631,80 @@ body {
     font-size: 0.82rem;
   }
 }
+
+/* Markdown Analysis Body */
+.md-strong {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.md-inline-code {
+  background: #1e293b;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.82rem;
+  color: #fbbf24;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.md-code-block {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 12px 0;
+  color: #a5b4fc;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+.md-heading {
+  color: #f1f5f9;
+  margin: 16px 0 8px;
+  font-weight: 700;
+}
+
+.md-h1 {
+  font-size: 1.15rem;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 6px;
+}
+
+.md-h2 {
+  font-size: 1.05rem;
+}
+
+.md-h3 {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.md-h4 {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.md-paragraph {
+  margin: 8px 0;
+  line-height: 1.7;
+  color: #cbd5e1;
+}
+
+.md-list {
+  margin: 8px 0;
+  padding-left: 24px;
+  color: #cbd5e1;
+}
+
+.md-list-item {
+  margin: 4px 0;
+  line-height: 1.6;
+}
+
+.md-hr {
+  border: none;
+  border-top: 1px solid #334155;
+  margin: 16px 0;
+}

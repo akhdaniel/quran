@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./App.css";
 
 const API_BASE = "https://equran.id/api/v2";
@@ -232,16 +234,44 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
     setAnalysis(null);
   };
 
-  const renderAnalysis = (text) => {
-    if (!text) return null;
-    let html = text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/```(\w*)\n?([\s\S]*?)```/g, "<pre><code>$2</code></pre>")
-      .replace(/`([^`]+)`/g, "<code>$1</code>")
-      .replace(/\n\n/g, "</p><p>")
-      .replace(/\n/g, "<br/>");
-    return `<p>${html}</p>`;
+  // Markdown components with custom styling
+  const MarkdownComponents = {
+    strong: ({ children }) => (
+      <span className="md-strong">{children}</span>
+    ),
+    code: ({ inline, children, ...props }) =>
+      inline ? (
+        <code className="md-inline-code">{children}</code>
+      ) : (
+        <pre className="md-code-block">
+          <code {...props}>{children}</code>
+        </pre>
+      ),
+    ul: ({ children }) => (
+      <ul className="md-list">{children}</ul>
+    ),
+    ol: ({ children }) => (
+      <ol className="md-list">{children}</ol>
+    ),
+    li: ({ children }) => (
+      <li className="md-list-item">{children}</li>
+    ),
+    h1: ({ children }) => (
+      <h1 className="md-heading md-h1">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="md-heading md-h2">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="md-heading md-h3">{children}</h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="md-heading md-h4">{children}</h4>
+    ),
+    p: ({ children }) => (
+      <p className="md-paragraph">{children}</p>
+    ),
+    hr: () => <hr className="md-hr" />,
   };
 
   if (loading) {
@@ -357,10 +387,14 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
                   </button>
                 </div>
               </div>
-              <div
-                className="analysis-body"
-                dangerouslySetInnerHTML={{ __html: renderAnalysis(analysis) }}
-              />
+              <div className="analysis-body">
+                <Markdown
+                  components={MarkdownComponents}
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {analysis}
+                </Markdown>
+              </div>
             </div>
           )}
         </div>

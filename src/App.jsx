@@ -272,6 +272,26 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
       <p className="md-paragraph">{children}</p>
     ),
     hr: () => <hr className="md-hr" />,
+    table: ({ children }) => (
+      <div className="md-table-wrapper">
+        <table className="md-table">{children}</table>
+      </div>
+    ),
+    thead: ({ children }) => (
+      <thead className="md-thead">{children}</thead>
+    ),
+    tbody: ({ children }) => (
+      <tbody className="md-tbody">{children}</tbody>
+    ),
+    tr: ({ children }) => (
+      <tr className="md-tr">{children}</tr>
+    ),
+    th: ({ children }) => (
+      <th className="md-th">{children}</th>
+    ),
+    td: ({ children }) => (
+      <td className="md-td">{children}</td>
+    ),
   };
 
   if (loading) {

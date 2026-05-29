@@ -36,13 +36,20 @@ function App() {
   const nextFn = useRef();
   const analysisRef = useRef(null);
 
-  // Load analysis from backend (or localStorage fallback) when ayah changes
+  // Load analysis & chat when ayah changes
+  const loadIdRef = useRef(0);
   useEffect(() => {
     if (!surahNomor || !currentAyat) return;
-    loadAnalysis(surahNomor, currentAyat);
+
+    // Langsung clear biar gak numpuk analisa lama
+    setAnalysis(null);
+    setChatMessages([]);
+
+    const id = ++loadIdRef.current;
+    loadAnalysis(surahNomor, currentAyat, id);
   }, [surahNomor, currentAyat]);
 
-  const loadAnalysis = async (surah, ayat) => {
+  const loadAnalysis = async (surah, ayat, id) => {
     const localKey = `${STORAGE_PREFIX}${surah}-${ayat}`;
 
     // Coba dari API dulu
@@ -51,8 +58,8 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         if (data?.content) {
+          if (id !== loadIdRef.current) return; // stale
           setAnalysis(data.content);
-          // Sync ke localStorage
           localStorage.setItem(localKey, JSON.stringify(data.content));
           return;
         }
@@ -70,34 +77,30 @@ function App() {
       } catch {
         content = cached;
       }
+      if (id !== loadIdRef.current) return; // stale
       setAnalysis(content);
 
-      // Sync ke backend (fire & forget) biar user lain ikut lihat
+      // Sync ke backend (fire & forget)
       fetch("/api/analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          surah,
-          ayat,
-          content,
-        }),
+        body: JSON.stringify({ surah, ayat, content }),
       }).then((r) => {
         if (!r.ok) console.warn("Backend sync failed:", r.status);
       }).catch((e) => console.warn("Backend sync error:", e.message));
-      // Also load chat history
-      const chatKey = `chat-${surah}-${ayat}`;
-      const chatCached = localStorage.getItem(chatKey);
-      if (chatCached) {
-        try {
-          setChatMessages(JSON.parse(chatCached));
-        } catch {
-          setChatMessages([]);
-        }
-      } else {
+    }
+
+    // Load chat history (selalu, baik dr API maupun localStorage)
+    const chatKey = `chat-${surah}-${ayat}`;
+    const chatCached = localStorage.getItem(chatKey);
+    if (id !== loadIdRef.current) return; // stale
+    if (chatCached) {
+      try {
+        setChatMessages(JSON.parse(chatCached));
+      } catch {
         setChatMessages([]);
       }
     } else {
-      setAnalysis(null);
       setChatMessages([]);
     }
   };

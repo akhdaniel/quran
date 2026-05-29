@@ -2,19 +2,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
 
 const API_BASE = "https://equran.id/api/v2";
-const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const STORAGE_PREFIX = "analysis-";
-const API_KEY_STORAGE = "deepseek-api-key";
 
-// Priority: env var > localStorage
-const ENV_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || "";
-
-function getApiKey() {
-  if (ENV_API_KEY && ENV_API_KEY !== "sk-your-deepseek-api-key-here") {
-    return ENV_API_KEY;
-  }
-  return localStorage.getItem(API_KEY_STORAGE) || "";
-}
+// Detect if running on Vercel (serverless proxy available)
+const isVercel = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+const PROXY_URL = "/api/analyze";
 
 function App() {
   const [surahs, setSurahs] = useState([]);
@@ -26,9 +18,10 @@ function App() {
   const [jumpValue, setJumpValue] = useState("");
   const [analysis, setAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [apiStatus, setApiStatus] = useState(
-    getApiKey() ? "ready" : "missing"
-  );
+  // On Vercel: check if proxy is configured by hitting a health endpoint
+  // On local: check env var
+  const apiAvailableRef = useRef(false);
+  const [apiStatus, setApiStatus] = useState("checking");
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [keyInput, setKeyInput] = useState("");
   const prevFn = useRef();
@@ -51,8 +44,35 @@ function App() {
     }
   }, [surahNomor, currentAyat]);
 
-  // Fetch daftar surat
+  // Check API availability & fetch daftar surat
   useEffect(() => {
+    // Cek proxy health dulu
+    if (isVercel) {
+      fetch(PROXY_URL, { method: "OPTIONS" })
+        .then(() => {
+          apiAvailableRef.current = true;
+          setApiStatus("ready");
+        })
+        .catch(() => {
+          // Proxy gak available, fallback ke localStorage
+          apiAvailableRef.current = false;
+          const localKey = localStorage.getItem("deepseek-api-key");
+          setApiStatus(localKey ? "ready" : "missing");
+        });
+    } else {
+      // Local: cek env var
+      const envKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+      if (envKey && envKey !== "sk-your-deepseek-api-key-here") {
+        apiAvailableRef.current = true;
+        setApiStatus("ready");
+      } else {
+        const localKey = localStorage.getItem("deepseek-api-key");
+        apiAvailableRef.current = false;
+        setApiStatus(localKey ? "ready" : "missing");
+      }
+    }
+
+    // Fetch surat
     fetch(`${API_BASE}/surat`)
       .then((r) => r.json())
       .then((d) => {
@@ -146,13 +166,23 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
   };
 
   const handleAnalyze = async () => {
-    const key = getApiKey();
-    if (!key) {
-      setShowKeyInput(true);
-      return;
-    }
-
     if (!ayat.teksArab) return;
+
+    // Di local dev tanpa env var, fallback ke localStorage
+    if (!isVercel) {
+      const envKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+      const localKey = localStorage.getItem("deepseek-api-key");
+      if (
+        !envKey ||
+        envKey === "sk-your-deepseek-api-key-here" ||
+        envKey === "sk-xxx…xxxx"
+      ) {
+        if (!localKey) {
+          setShowKeyInput(true);
+          return;
+        }
+      }
+    }
 
     setAnalyzing(true);
     setAnalysis(null);
@@ -164,35 +194,55 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
         ayat.teksLatin
       );
 
-      const res = await fetch(DEEPSEEK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${key}`,
+      const messages = [
+        {
+          role: "system",
+          content:
+            "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab dalam Bahasa Indonesia yang baik dan santai namun ilmiah.",
         },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content:
-                "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab dalam Bahasa Indonesia yang baik dan santai namun ilmiah.",
-            },
-            { role: "user", content: prompt },
-          ],
-          max_tokens: 2000,
-          temperature: 0.3,
-        }),
-      });
+        { role: "user", content: prompt },
+      ];
 
-      if (!res.ok) {
-        const errData = await res.text();
-        throw new Error(`API error ${res.status}: ${errData}`);
+      let result;
+
+      if (isVercel) {
+        // Pakai Vercel proxy (CORS-safe)
+        const res = await fetch(PROXY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages, max_tokens: 2000, temperature: 0.3 }),
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        result = data.choices?.[0]?.message?.content || "Tidak ada respons.";
+      } else {
+        // Local: langsung ke DeepSeek (env atau localStorage)
+        const key =
+          import.meta.env.VITE_DEEPSEEK_API_KEY ||
+          localStorage.getItem("deepseek-api-key");
+        const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${key}`,
+          },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages,
+            max_tokens: 2000,
+            temperature: 0.3,
+          }),
+        });
+        if (!res.ok) {
+          const errData = await res.text();
+          throw new Error(`API error ${res.status}: ${errData}`);
+        }
+        const data = await res.json();
+        result = data.choices?.[0]?.message?.content || "Tidak ada respons.";
       }
-
-      const data = await res.json();
-      const result =
-        data.choices?.[0]?.message?.content || "Tidak ada respons.";
 
       // Cache the result
       const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
@@ -216,7 +266,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
   const handleSaveKey = () => {
     const trimmed = keyInput.trim();
     if (trimmed) {
-      localStorage.setItem(API_KEY_STORAGE, trimmed);
+      localStorage.setItem("deepseek-api-key", trimmed);
       setApiStatus("ready");
       setShowKeyInput(false);
       setTimeout(() => handleAnalyze(), 100);
@@ -279,7 +329,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana, jangan pakai
           <button
             className="api-set-btn"
             onClick={() => {
-              setKeyInput(localStorage.getItem(API_KEY_STORAGE) || "");
+              setKeyInput(localStorage.getItem("deepseek-api-key") || "");
               setShowKeyInput(true);
             }}
           >

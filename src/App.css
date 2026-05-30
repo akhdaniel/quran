@@ -1029,11 +1029,12 @@ body {
 }
 
 /* Arabic words in analysis markdown - larger + underline */
-.md-arabic-word {
+
+/* Arabic words in analysis (bold text with Arabic characters) */
+.md-strong-arabic {
   font-size: 1.8rem;
   font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
-  text-decoration-thickness: 0;
-  font-style: normal;
+  font-weight: 700;
   color: #f8fafc;
   line-height: 1.6;
 }

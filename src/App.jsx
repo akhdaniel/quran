@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import "./App.css";
 
 const API_BASE = "https://equran.id/api/v2";
+const ENGLISH_API = "https://api.alquran.cloud/v1";
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const STORAGE_PREFIX = "analysis-";
 
@@ -238,18 +239,47 @@ function App() {
     setCurrentAyat(1);
     setJumpValue("");
     setAnalysis(null);
-    fetch(`${API_BASE}/surat/${nomor}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.code === 200) {
-          setCurrentSurah(d.data);
-          setVerses(d.data.ayat);
+
+    const isEn = lang === "en";
+
+    Promise.all([
+      // Data utama dari equran.id (Arab + Indonesia)
+      fetch(`${API_BASE}/surat/${nomor}`).then((r) => r.json()),
+      // English translation dari alquran.cloud (kalo EN)
+      isEn
+        ? fetch(`${ENGLISH_API}/surah/${nomor}/en.sahih`)
+            .then((r) => r.json())
+            .catch(() => null)
+        : Promise.resolve(null),
+    ])
+      .then(([idData, enData]) => {
+        if (idData.code === 200) {
+          const surah = { ...idData.data };
+          let ayats = [...surah.ayat];
+
+          // Merge English translation
+          if (isEn && enData?.data?.ayahs) {
+            ayats = ayats.map((ayat, i) => ({
+              ...ayat,
+              teksInggris: enData.data.ayahs[i]?.text || "",
+            }));
+            // Update surah arti ke English
+            surah.arti = enData.data.englishNameTranslation || surah.arti;
+          } else {
+            ayats = ayats.map((ayat) => ({
+              ...ayat,
+              teksInggris: "",
+            }));
+          }
+
+          setCurrentSurah(surah);
+          setVerses(ayats);
           setSurahNomor(nomor);
         }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [lang]);
 
   const totalAyat = verses.length;
   const ayat = verses[currentAyat - 1] || {};
@@ -319,7 +349,7 @@ function App() {
     try {
       const prompt = buildAnalysisPrompt(
         ayat.teksArab,
-        ayat.teksIndonesia,
+        lang === "en" && ayat.teksInggris ? ayat.teksInggris : ayat.teksIndonesia,
         ayat.teksLatin
       );
 
@@ -688,8 +718,14 @@ function App() {
             <span className="surah-arabic">{currentSurah?.nama}</span>
           </div>
           <div className="surah-meta">
-            {currentSurah?.arti} &middot; {currentSurah?.jumlahAyat} Ayat &middot;{" "}
-            {currentSurah?.tempatTurun === "mekah" ? "Makkiyah" : "Madaniyah"}
+            {currentSurah?.arti} &middot; {currentSurah?.jumlahAyat} {lang === "en" ? "Verses" : "Ayat"} &middot;{" "}
+            {currentSurah?.tempatTurun === "mekah"
+              ? lang === "en"
+                ? "Makkiyah"
+                : "Makkiyah"
+              : lang === "en"
+                ? "Madaniyah"
+                : "Madaniyah"}
           </div>
         </div>
 
@@ -755,7 +791,9 @@ function App() {
               </span>
             ))}
           </div>
-          <div className="ayat-translation">{ayat.teksIndonesia}</div>
+          <div className="ayat-translation">
+            {lang === "en" && ayat.teksInggris ? ayat.teksInggris : ayat.teksIndonesia}
+          </div>
           <div className="ayat-latin">{ayat.teksLatin}</div>
         </div>
 

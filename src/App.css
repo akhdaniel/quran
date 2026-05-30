@@ -195,7 +195,7 @@ body {
 
 .ayat-arabic {
   text-align: center;
-  font-size: 2rem;
+  font-size: 1.6rem;
   line-height: 1.7;
   font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
   color: #f8fafc;
@@ -1008,7 +1008,7 @@ body {
 }
 
 .word-nav-arabic {
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
   color: #facc15;
   flex-shrink: 0;

@@ -866,7 +866,7 @@ function App() {
                   components={MarkdownComponents}
                   remarkPlugins={[remarkGfm]}
                 >
-                  {analysis?.replace(/\*\*Terjemahan Kata Per Kata\*\*[\s\S]*?(?=\*\*Bentukan|$)/, "")}
+                  {analysis?.replace(/\*\*(Terjemahan Kata Per Kata|Word-by-Word Translation)\*\*[\s\S]*?(?=\*\*(Bentukan|Word Formation)|$)/, "")}
                 </Markdown>
               </div>
 

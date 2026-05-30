@@ -152,7 +152,7 @@ body {
 }
 
 .bismillah-text {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
   color: #cbd5e1;
   opacity: 0.9;
@@ -195,7 +195,7 @@ body {
 
 .ayat-arabic {
   text-align: center;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   line-height: 1.7;
   font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
   color: #f8fafc;
@@ -346,7 +346,7 @@ body {
   }
 
   .ayat-arabic {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
   }
 
   .navigation {
@@ -1008,7 +1008,7 @@ body {
 }
 
 .word-nav-arabic {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
   color: #facc15;
   flex-shrink: 0;
@@ -1032,7 +1032,7 @@ body {
 
 /* Arabic words in analysis (bold text with Arabic characters) */
 .md-strong-arabic {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
   font-weight: 700;
   color: #f8fafc;

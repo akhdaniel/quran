@@ -645,15 +645,6 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                   </button>
                 </div>
               </div>
-              <div className="analysis-body">
-                <Markdown
-                  components={MarkdownComponents}
-                  remarkPlugins={[remarkGfm]}
-                >
-                  {analysis}
-                </Markdown>
-              </div>
-
               {/* Word-by-word nav */}
               {wordEntries.length > 0 && (
                 <div className="word-nav-section">
@@ -676,6 +667,15 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                   </div>
                 </div>
               )}
+
+              <div className="analysis-body">
+                <Markdown
+                  components={MarkdownComponents}
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {analysis}
+                </Markdown>
+              </div>
 
               {/* Chatbox */}
               <div className="chat-section">

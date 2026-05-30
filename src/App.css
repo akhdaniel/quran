@@ -391,30 +391,34 @@ body {
   font-size: 0.7rem;
 }
 
-/* Hide spinners for number input */
-.jump-input::-webkit-inner-spin-button,
-.jump-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.jump-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-.jump-btn {
-  padding: 10px 14px;
+.jump-select {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 180px;
+  padding: 10px 28px 10px 12px;
   border-radius: 10px;
-  border: none;
-  background: #eab308;
-  color: #0f172a;
-  font-weight: 700;
-  font-size: 0.85rem;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  outline: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
 }
 
-.jump-btn:hover {
-  background: #facc15;
+.jump-select:focus {
+  border-color: #eab308;
+}
+
+.jump-select option {
+  background: #0f172a;
+  color: #e2e8f0;
+  direction: rtl;
 }
 
 /* Keyboard shortcuts text */
@@ -980,13 +984,11 @@ body {
   font-size: 0.82rem !important;
 }
 
-.nav-top .jump-input {
-  padding: 7px 6px !important;
-  width: 56px !important;
-}
-
-.nav-top .jump-btn {
-  padding: 7px 12px !important;
+.nav-top .jump-select {
+  padding: 7px 24px 7px 10px !important;
+  font-size: 0.75rem !important;
+  max-width: 150px !important;
+  background-position: right 6px center !important;
 }
 
 @media (max-width: 480px) {

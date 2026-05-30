@@ -612,20 +612,17 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             &#8592; Sebelumnya
           </button>
 
-          <form className="jump-form" onSubmit={handleJump}>
-            <input
-              type="number"
-              className="jump-input"
-              placeholder="Lompat..."
-              min={1}
-              max={totalAyat}
-              value={jumpValue}
-              onChange={(e) => setJumpValue(e.target.value)}
-            />
-            <button type="submit" className="jump-btn">
-              Pergi
-            </button>
-          </form>
+          <select
+            className="jump-select"
+            value={currentAyat}
+            onChange={(e) => setCurrentAyat(Number(e.target.value))}
+          >
+            {verses.map((v, i) => (
+              <option key={i} value={i + 1}>
+                {i + 1}. {v.teksArab?.split(/\s+/)[0] || ""}
+              </option>
+            ))}
+          </select>
 
           <button
             className="nav-btn"
@@ -814,20 +811,17 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             &#8592; Sebelumnya
           </button>
 
-          <form className="jump-form" onSubmit={handleJump}>
-            <input
-              type="number"
-              className="jump-input"
-              placeholder="Lompat..."
-              min={1}
-              max={totalAyat}
-              value={jumpValue}
-              onChange={(e) => setJumpValue(e.target.value)}
-            />
-            <button type="submit" className="jump-btn">
-              Pergi
-            </button>
-          </form>
+          <select
+            className="jump-select"
+            value={currentAyat}
+            onChange={(e) => setCurrentAyat(Number(e.target.value))}
+          >
+            {verses.map((v, i) => (
+              <option key={i} value={i + 1}>
+                {i + 1}. {v.teksArab?.split(/\s+/)[0] || ""}
+              </option>
+            ))}
+          </select>
 
           <button
             className="nav-btn"

@@ -916,3 +916,27 @@ body {
     width: 44px !important;
   }
 }
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 16px 0 24px;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer-link {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}

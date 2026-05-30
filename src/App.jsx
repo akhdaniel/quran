@@ -692,6 +692,21 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
         </div>
       </main>
 
+      {/* Footer */}
+      <footer className="footer">
+        <p>
+          Ada saran, pertanyaan, atau mau donasi?{" "}
+          <a
+            href="https://x.com/akhdaniel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            @akhdaniel
+          </a>
+        </p>
+      </footer>
+
       {/* API Key Modal */}
       {showKeyModal && (
         <div className="modal-overlay" onClick={() => setShowKeyModal(false)}>

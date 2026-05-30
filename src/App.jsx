@@ -617,11 +617,16 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             value={currentAyat}
             onChange={(e) => setCurrentAyat(Number(e.target.value))}
           >
-            {verses.map((v, i) => (
-              <option key={i} value={i + 1}>
-                {i + 1}. {v.teksArab?.split(/\s+/)[0] || ""}
-              </option>
-            ))}
+            {verses.map((v, i) => {
+              const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
+              const first = words[0] || "";
+              const last = words.length > 1 ? words[words.length - 1] : "";
+              return (
+                <option key={i} value={i + 1}>
+                  {i + 1}. {first}{last ? " ... " + last : ""}
+                </option>
+              );
+            })}
           </select>
 
           <button
@@ -816,11 +821,16 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             value={currentAyat}
             onChange={(e) => setCurrentAyat(Number(e.target.value))}
           >
-            {verses.map((v, i) => (
-              <option key={i} value={i + 1}>
-                {i + 1}. {v.teksArab?.split(/\s+/)[0] || ""}
-              </option>
-            ))}
+            {verses.map((v, i) => {
+              const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
+              const first = words[0] || "";
+              const last = words.length > 1 ? words[words.length - 1] : "";
+              return (
+                <option key={i} value={i + 1}>
+                  {i + 1}. {first}{last ? " ... " + last : ""}
+                </option>
+              );
+            })}
           </select>
 
           <button

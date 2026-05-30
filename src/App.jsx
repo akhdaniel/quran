@@ -231,7 +231,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
             {
               role: "system",
               content:
-                "Kamu adalah asisten ahli tafsir Al-Qur'an yang menguasai ilmu nahwu, sharaf, balaghah, dan tafsir. Jawab langsung tanpa pendahuluan atau penutup. Gunakan Bahasa Indonesia yang baik dan santai namun ilmiah.",
+                "Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab seputar ayat yang diberikan, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Jawab langsung tanpa pendahuluan atau penutup. Gunakan Bahasa Indonesia yang baik dan santai namun ilmiah.",
             },
             { role: "user", content: prompt },
           ],
@@ -324,11 +324,13 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
     setChatSending(true);
 
     try {
-      const systemPrompt = `Kamu adalah asisten ahli tafsir Al-Qur'an. Berikut adalah analisa ayat yang sudah dibuat:
+      const systemPrompt = `Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab pertanyaan seputar ayat yang sedang dibahas, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Berikut adalah analisa ayat yang sudah dibuat:
 
 ${analysis?.substring(0, 4000) || "(belum ada analisa)"}
 
-Jawab langsung tanpa pendahuluan atau penutup. Berikan detail dan ilmiah dalam Bahasa Indonesia.`;
+Jawab langsung tanpa pendahuluan atau penutup. Berikan detail dan ilmiah dalam Bahasa Indonesia.
+
+Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak kembali ke ayat yang sedang dibahas.`;
 
       const apiMessages = [
         { role: "system", content: systemPrompt },

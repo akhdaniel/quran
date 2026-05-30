@@ -27,6 +27,8 @@ function App() {
   const [analyzing, setAnalyzing] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [keyInput, setKeyInput] = useState("");
+  const [surahSearch, setSurahSearch] = useState("");
+  const [showSurahDropdown, setShowSurahDropdown] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
@@ -515,19 +517,75 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
         </div>
       </header>
 
-      {/* Surah Selector */}
+      {/* Surah Search */}
       <div className="surah-selector">
-        <select
-          className="surah-select"
-          value={currentSurah?.nomor || 1}
-          onChange={(e) => handleSurahChange(Number(e.target.value))}
-        >
-          {surahs.map((s) => (
-            <option key={s.nomor} value={s.nomor}>
-              {s.nomor}. {s.namaLatin} ({s.nama})
-            </option>
-          ))}
-        </select>
+        <div className="surah-search-wrapper">
+          <input
+            className="surah-search-input"
+            placeholder="Cari surat (Arab / Latin)..."
+            value={surahSearch}
+            onChange={(e) => {
+              setSurahSearch(e.target.value);
+              setShowSurahDropdown(true);
+            }}
+            onFocus={() => setShowSurahDropdown(true)}
+            onBlur={() => setTimeout(() => setShowSurahDropdown(false), 200)}
+          />
+          {surahSearch && (
+            <button
+              className="surah-search-clear"
+              onClick={() => {
+                setSurahSearch("");
+                setShowSurahDropdown(false);
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {showSurahDropdown && (
+          <div className="surah-dropdown">
+            {surahs
+              .filter((s) => {
+                if (!surahSearch) return true;
+                const q = surahSearch.toLowerCase();
+                return (
+                  s.namaLatin.toLowerCase().includes(q) ||
+                  s.nama.includes(q) ||
+                  s.nomor.toString().includes(q) ||
+                  s.arti.toLowerCase().includes(q)
+                );
+              })
+              .slice(0, 50)
+              .map((s) => (
+                <div
+                  key={s.nomor}
+                  className={`surah-dropdown-item ${s.nomor === currentSurah?.nomor ? "active" : ""}`}
+                  onMouseDown={() => {
+                    handleSurahChange(s.nomor);
+                    setSurahSearch("");
+                    setShowSurahDropdown(false);
+                  }}
+                >
+                  <span className="surah-dd-nomor">{s.nomor}</span>
+                  <span className="surah-dd-latin">{s.namaLatin}</span>
+                  <span className="surah-dd-arab">{s.nama}</span>
+                </div>
+              ))}
+            {surahs.filter((s) => {
+              if (!surahSearch) return true;
+              const q = surahSearch.toLowerCase();
+              return (
+                s.namaLatin.toLowerCase().includes(q) ||
+                s.nama.includes(q) ||
+                s.nomor.toString().includes(q) ||
+                s.arti.toLowerCase().includes(q)
+              );
+            }).length === 0 && (
+              <div className="surah-dropdown-empty">Tidak ditemukan</div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Card */}

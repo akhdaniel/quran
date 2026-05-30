@@ -68,36 +68,118 @@ body {
   border-color: #eab308;
 }
 
-/* Surah Selector */
+/* Surah Search */
 .surah-selector {
-  padding: 8px 0 16px;
+  padding: 8px 0 12px;
+  position: relative;
 }
 
-.surah-select {
-  width: 100%;
-  padding: 12px 16px;
+.surah-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.surah-search-input {
+  flex: 1;
+  padding: 11px 16px;
   border-radius: 12px;
   border: 1px solid #334155;
   background: #1e293b;
   color: #e2e8f0;
-  font-size: 1rem;
-  cursor: pointer;
+  font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
 }
 
-.surah-select:focus {
+.surah-search-input:focus {
   border-color: #eab308;
 }
 
-.surah-select option {
-  background: #1e293b;
+.surah-search-input::placeholder {
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.surah-search-clear {
+  background: #334155;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.surah-search-clear:hover {
+  background: #475569;
   color: #e2e8f0;
+}
+
+.surah-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  margin-top: 4px;
+  max-height: 360px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.surah-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #1a2332;
+}
+
+.surah-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.surah-dropdown-item:hover {
+  background: #263548;
+}
+
+.surah-dropdown-item.active {
+  background: #3b82f622;
+  border-left: 3px solid #3b82f6;
+}
+
+.surah-dd-nomor {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 28px;
+}
+
+.surah-dd-latin {
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.surah-dd-arab {
+  color: #eab308;
+  font-size: 1rem;
+  font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
+  direction: rtl;
+}
+
+.surah-dropdown-empty {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
 }
 
 /* Main Card */

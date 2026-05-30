@@ -31,9 +31,6 @@ function App() {
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const chatRef = useRef(null);
-  const [wordEntries, setWordEntries] = useState([]);
-  const wordRefs = useRef({});
-  const ayatWords = ayat.teksArab ? ayat.teksArab.split(/\s+/).filter(Boolean) : [];
   const hasKey = !!getApiKey();
   const prevFn = useRef();
   const nextFn = useRef();
@@ -379,52 +376,6 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
     }
   };
 
-  // Parse kata per kata from analysis text
-  useEffect(() => {
-    if (!analysis) {
-      setWordEntries([]);
-      return;
-    }
-    const lines = analysis.split("\n");
-    const kataSection = [];
-    let inKataSection = false;
-    for (const line of lines) {
-      if (line.includes("**Terjemahan Kata Per Kata**")) {
-        inKataSection = true;
-        continue;
-      }
-      if (inKataSection && line.startsWith("**")) {
-        const match = line.match(/^\*\*([^\*]+)\*\*/);
-        if (match) {
-          kataSection.push({
-            arabic: match[1].trim(),
-            original: line,
-          });
-        }
-      }
-      if (inKataSection && line.startsWith("**") === false && line.trim() === "") {
-        continue;
-      }
-      if (inKataSection && kataSection.length > 0 && !line.startsWith("- **") && !line.startsWith("**")) {
-        break;
-      }
-    }
-    setWordEntries(kataSection);
-  }, [analysis]);
-
-  // Click handler: scroll ke kata di analisa
-  const scrollToWord = (index) => {
-    const el = wordRefs.current[index];
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.add("word-highlight");
-      setTimeout(() => el.classList.remove("word-highlight"), 2000);
-    } else {
-      // Fallback: scroll ke container analisa
-      analysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   // Markdown components with custom styling
   const MarkdownComponents = {
     strong: ({ children }) => (
@@ -590,18 +541,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
           key={`${currentSurah?.nomor}-${currentAyat}`}
         >
           <div className="ayat-number">{ayat.nomor || currentAyat}</div>
-          <div className="ayat-arabic">
-            {ayatWords.map((word, i) => (
-              <span
-                key={i}
-                className={`ayat-word ${i < wordEntries.length ? "clickable" : ""}`}
-                onClick={() => i < wordEntries.length && scrollToWord(i)}
-                title={i < wordEntries.length ? "Klik untuk lihat penjelasan" : ""}
-              >
-                {word}
-              </span>
-            ))}
-          </div>
+          <div className="ayat-arabic">{ayat.teksArab}</div>
           <div className="ayat-translation">{ayat.teksIndonesia}</div>
           <div className="ayat-latin">{ayat.teksLatin}</div>
         </div>
@@ -651,29 +591,6 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                   {analysis}
                 </Markdown>
               </div>
-
-              {/* Word-by-word nav */}
-              {wordEntries.length > 0 && (
-                <div className="word-nav-section">
-                  <div className="word-nav-title">📖 Kata Per Kata</div>
-                  <div className="word-nav-list">
-                    {wordEntries.map((entry, i) => (
-                      <div
-                        key={i}
-                        ref={(el) => { wordRefs.current[i] = el; }}
-                        className="word-nav-item"
-                        onClick={() => scrollToWord(i)}
-                      >
-                        <span className="word-nav-arabic">{entry.arabic}</span>
-                        <span className="word-nav-arrow">→</span>
-                        <span className="word-nav-meaning">
-                          {entry.original.replace(/^\*\*[^\*]+\*\*\s*[—–-]?\s*/, "").trim()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Chatbox */}
               <div className="chat-section">

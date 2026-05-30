@@ -196,7 +196,7 @@ ${latin ? `**Latin:** ${latin}` : ""}
 
 Berikan analisis dengan format berikut (gunakan markdown sederhana):
 
-1. **Terjemahan Kata Per Kata** — setiap kata Arab diurai dengan arti per katanya
+1. **Terjemahan Kata Per Kata** — tulis setiap kata Arab dengan format _kata_ (italic/miring) lalu diikuti artinya. Contoh: _الْحَمْدُ_ — Segala puji
 2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
 3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
 4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
@@ -395,7 +395,9 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
           continue;
         }
         if (inSection && line.startsWith("-")) {
-          const match = line.match(/\*\*([^\*]+)\*\*/);
+          // Coba italic _arabic_ dulu, fallback ke bold **arabic**
+          let match = line.match(/_([^_]+)_/);
+          if (!match) match = line.match(/\*\*([^\*]+)\*\*/);
           if (match) {
             list.push({
               arabic: match[1].trim(),
@@ -424,6 +426,9 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
   const MarkdownComponents = {
     strong: ({ children }) => (
       <span className="md-strong">{children}</span>
+    ),
+    em: ({ children }) => (
+      <em className="md-arabic-word">{children}</em>
     ),
     code: ({ inline, children, ...props }) =>
       inline ? (
@@ -661,7 +666,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                         <span className="word-nav-arabic">{entry.arabic}</span>
                         <span className="word-nav-arrow">→</span>
                         <span className="word-nav-meaning">
-                          {entry.original.replace(/^\s*-\s*\*\*[^\*]+\*\*\s*[—–-]?\s*/, "").trim()}
+                          {entry.original.replace(/^\s*-\s*(_+[^_]+_+|\*\*+[^\*]+\*\*+)\s*[—–-]?\s*/, "").trim()}
                         </span>
                       </div>
                     ))}

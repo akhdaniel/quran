@@ -1027,3 +1027,16 @@ body {
   color: #94a3b8;
   line-height: 1.4;
 }
+
+/* Arabic words in analysis markdown - larger + underline */
+.md-arabic-word {
+  font-size: 1.8rem;
+  font-family: "Traditional Arabic", "Scheherazade New", "Amiri", serif;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: #3b82f6;
+  text-decoration-thickness: 2px;
+  font-style: normal;
+  color: #facc15;
+  line-height: 1.6;
+}

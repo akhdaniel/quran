@@ -33,7 +33,6 @@ function App() {
   const chatRef = useRef(null);
   const [wordEntries, setWordEntries] = useState([]);
   const wordRefs = useRef({});
-  const ayatWords = ayat?.teksArab ? ayat.teksArab.split(/\s+/).filter(Boolean) : [];
   const hasKey = !!getApiKey();
   const prevFn = useRef();
   const nextFn = useRef();
@@ -143,6 +142,7 @@ function App() {
 
   const totalAyat = verses.length;
   const ayat = verses[currentAyat - 1] || {};
+  const ayatWords = ayat?.teksArab ? ayat.teksArab.split(/\s+/).filter(Boolean) : [];
 
   const prevAyat = useCallback(() => {
     setCurrentAyat((a) => Math.max(1, a - 1));

@@ -15,7 +15,115 @@ function getApiKey() {
   return localStorage.getItem("deepseek-api-key") || "";
 }
 
+// ─── Translations ─────────────────────────────────────────
+const translations = {
+  id: {
+    loading: "Memuat...",
+    title: "Al-Qur'an",
+    surahSearchPlaceholder: "Cari surat (Arab / Latin)...",
+    surahNotFound: "Tidak ditemukan",
+    prev: "Sebelumnya",
+    next: "Selanjutnya",
+    analyzeBtn: "Analisa Ayat",
+    analyzing: "Menganalisis ayat dengan AI...",
+    analysisTitle: "Analisa Ayat",
+    regenTitle: "Analisa ulang",
+    closeTitle: "Tutup",
+    wordNavTitle: "Kata Per Kata",
+    chatLabelUser: "Kamu",
+    chatLabelAI: "AI",
+    chatTyping: "Mengetik...",
+    chatPlaceholder: "Tanya detail analisa...",
+    chatSend: "Kirim",
+    progressText: "Ayat {current} dari {total}",
+    footerText:
+      "Ada saran, pertanyaan, atau mau donasi? Silakan hubungi",
+    footerHandle: "@akhmaddaniel",
+    modalDesc:
+      "Masukkan API key untuk fitur analisa ayat. Bisa juga pakai env VITE_DEEPSEEK_API_KEY di Vercel dashboard.",
+    modalHint: "Belum punya?",
+    modalHintLink: "Daftar di sini",
+    modalCancel: "Batal",
+    modalSave: "Simpan",
+    errNoKey:
+      "**Error:** API key belum di-set.\n\n> 💡 Klik tombol ⚙️ di pojok kanan atas untuk memasukkan key, atau set `VITE_DEEPSEEK_API_KEY` di Vercel env vars.",
+    errPrefix: "Error",
+    systemPrompt:
+      "Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab seputar ayat yang diberikan, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Jawab langsung tanpa pendahuluan atau penutup. Gunakan Bahasa Indonesia yang baik dan santai namun ilmiah.",
+    analysisPrompt:
+      "Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia. Langsung ke analisis, tanpa pendahuluan atau penutup.\n\n**Ayat:**\n{arab}\n\n**Terjemahan:**\n{translation}\n\n{latinSegment}Berikan analisis dengan format berikut (gunakan markdown sederhana):\n\n1. **Terjemahan Kata Per Kata** — setiap kata Arab ditulis tebal **kata** lalu diikuti artinya. Contoh: **الْحَمْدُ** — Segala puji\n2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci\n3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata\n4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)",
+    chatSystemPrefix: "Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab pertanyaan seputar ayat yang sedang dibahas, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Berikut adalah analisa ayat yang sudah dibuat:\n\n{analysis}\n\nJawab langsung tanpa pendahuluan atau penutup. Berikan detail dan ilmiah dalam Bahasa Indonesia.\n\nJika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak kembali ke ayat yang sedang dibahas.",
+    bismillah: "Bismillah",
+  },
+  en: {
+    loading: "Loading...",
+    title: "Al-Qur'an",
+    surahSearchPlaceholder: "Search surah (Arabic / Latin)...",
+    surahNotFound: "Not found",
+    prev: "Previous",
+    next: "Next",
+    analyzeBtn: "Analyze Verse",
+    analyzing: "Analyzing verse with AI...",
+    analysisTitle: "Verse Analysis",
+    regenTitle: "Re-analyze",
+    closeTitle: "Close",
+    wordNavTitle: "Word by Word",
+    chatLabelUser: "You",
+    chatLabelAI: "AI",
+    chatTyping: "Typing...",
+    chatPlaceholder: "Ask about the analysis...",
+    chatSend: "Send",
+    progressText: "Verse {current} of {total}",
+    footerText:
+      "Suggestions, questions, or want to donate? Reach out at",
+    footerHandle: "@akhmaddaniel",
+    modalDesc:
+      "Enter your API key for verse analysis. You can also use the VITE_DEEPSEEK_API_KEY env var in your Vercel dashboard.",
+    modalHint: "Don't have one?",
+    modalHintLink: "Register here",
+    modalCancel: "Cancel",
+    modalSave: "Save",
+    errNoKey:
+      "**Error:** API key not set.\n\n> 💡 Click the ⚙️ button in the top-right corner to enter a key, or set `VITE_DEEPSEEK_API_KEY` in Vercel env vars.",
+    errPrefix: "Error",
+    systemPrompt:
+      "You are an expert Qur'anic tafsir assistant. Only answer questions related to the given verse, nahw, sarf, balaghah, and Qur'anic tafsir. Answer directly without preamble or closing. Use clear, academic yet approachable English.",
+    analysisPrompt:
+      "Analyze the following Qur'anic verse deeply and in a structured manner in English. Get straight to the analysis, no introduction or closing.\n\n**Verse:**\n{arab}\n\n**Translation:**\n{translation}\n\n{latinSegment}Provide analysis in the following format (use simple markdown):\n\n1. **Word-by-Word Translation** — each Arabic word in bold **word** followed by its meaning. Example: **الْحَمْدُ** — All praise\n2. **Word Formation (Sarf/Morphology)** — analysis of root word forms (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, etc.) for key words\n3. **Balaghah (Rhetoric)** — analysis of rhetorical devices and linguistic beauty: uslub (style), kinayah/majaz (metaphor), fashahah (eloquence), unique word arrangement\n4. **Brief Tafsir** — concise explanation of the verse's meaning based on classical tafsir (such as Ibn Kathir, al-Mishbah, etc.)",
+    chatSystemPrefix: "You are an expert Qur'anic tafsir assistant. Only answer questions related to the verse being discussed, nahw, sarf, balaghah, and Qur'anic tafsir. Here is the existing analysis for the verse:\n\n{analysis}\n\nAnswer directly without preamble or closing. Be detailed and academic in English.\n\nIf the user asks about something outside Qur'anic tafsir, politely decline and redirect to the verse being discussed.",
+    bismillah: "In the name of Allah",
+  },
+};
+
 function App() {
+  // ─── i18n ──────────────────────────────────────────────
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem("quran-lang") || "id";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("quran-lang", lang);
+  }, [lang]);
+
+  const t = useCallback(
+    (key, params) => {
+      let val = translations[lang]?.[key];
+      if (val === undefined) val = translations["id"]?.[key] ?? key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          val = val.replace(`{${k}}`, v);
+        }
+      }
+      return val;
+    },
+    [lang]
+  );
+
+  const toggleLang = () => {
+    setLang((l) => (l === "id" ? "en" : "id"));
+  };
+
+  // ─── State ──────────────────────────────────────────────
   const [surahs, setSurahs] = useState([]);
   const [currentSurah, setCurrentSurah] = useState(null);
   const [surahNomor, setSurahNomor] = useState(1);
@@ -186,22 +294,12 @@ function App() {
   };
 
   const buildAnalysisPrompt = (arab, translation, latin) => {
-    return `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia. Langsung ke analisis, tanpa pendahuluan atau penutup.
-
-**Ayat:**
-${arab}
-
-**Terjemahan:**
-${translation}
-
-${latin ? `**Latin:** ${latin}` : ""}
-
-Berikan analisis dengan format berikut (gunakan markdown sederhana):
-
-1. **Terjemahan Kata Per Kata** — setiap kata Arab ditulis tebal **kata** lalu diikuti artinya. Contoh: **الْحَمْدُ** — Segala puji
-2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
-3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
-4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
+    const latinSegment = latin ? `**Latin:** ${latin}\n\n` : "";
+    const prompt = t("analysisPrompt")
+      .replace("{arab}", arab)
+      .replace("{translation}", translation)
+      .replace("{latinSegment}", latinSegment);
+    return prompt;
   };
 
   const handleAnalyze = async () => {
@@ -235,8 +333,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
           messages: [
             {
               role: "system",
-              content:
-                "Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab seputar ayat yang diberikan, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Jawab langsung tanpa pendahuluan atau penutup. Gunakan Bahasa Indonesia yang baik dan santai namun ilmiah.",
+              content: t("systemPrompt"),
             },
             { role: "user", content: prompt },
           ],
@@ -287,7 +384,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
       }, 100);
     } catch (err) {
       setAnalysis(
-        `**Error:** ${err.message}\n\n> 💡 Pastikan \`VITE_DEEPSEEK_API_KEY\` sudah di-set di Vercel env vars.`
+        `**${t("errPrefix")}:** ${err.message}\n\n> 💡 Pastikan \`VITE_DEEPSEEK_API_KEY\` sudah di-set di Vercel env vars.`
       );
     } finally {
       setAnalyzing(false);
@@ -329,13 +426,8 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
     setChatSending(true);
 
     try {
-      const systemPrompt = `Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab pertanyaan seputar ayat yang sedang dibahas, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Berikut adalah analisa ayat yang sudah dibuat:
-
-${analysis?.substring(0, 4000) || "(belum ada analisa)"}
-
-Jawab langsung tanpa pendahuluan atau penutup. Berikan detail dan ilmiah dalam Bahasa Indonesia.
-
-Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak kembali ke ayat yang sedang dibahas.`;
+      const analysisSnippet = analysis?.substring(0, 4000) || t("chatSystemPrefixNoAnalysis");
+      const systemPrompt = t("chatSystemPrefix").replace("{analysis}", analysisSnippet);
 
       const apiMessages = [
         { role: "system", content: systemPrompt },
@@ -374,7 +466,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
     } catch (err) {
       setChatMessages([
         ...updated,
-        { role: "assistant", content: `**Error:** ${err.message}` },
+        { role: "assistant", content: `**${t("errPrefix")}:** ${err.message}` },
       ]);
     } finally {
       setChatSending(false);
@@ -398,7 +490,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
       const list = [];
       let inSection = false;
       for (const line of lines) {
-        if (line.includes("**Terjemahan Kata Per Kata**")) {
+        if (line.includes("**Terjemahan Kata Per Kata**") || line.includes("**Word-by-Word Translation**")) {
           inSection = true;
           continue;
         }
@@ -493,7 +585,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
   if (loading) {
     return (
       <div className="app">
-        <div className="loading">Memuat...</div>
+        <div className="loading">{t("loading")}</div>
       </div>
     );
   }
@@ -502,7 +594,14 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
     <div className="app">
       {/* Header */}
       <header className="header">
-        <h1 className="title">Al-Qur&apos;an</h1>
+        <h1 className="title">{t("title")}</h1>
+        <button
+          className="lang-toggle"
+          onClick={toggleLang}
+          title={lang === "id" ? "Switch to English" : "Ganti ke Bahasa Indonesia"}
+        >
+          🌐 <span className="lang-label">{lang === "id" ? "ID" : "EN"}</span>
+        </button>
       </header>
 
       {/* Surah Search */}
@@ -510,7 +609,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
         <div className="surah-search-wrapper">
           <input
             className="surah-search-input"
-            placeholder="Cari surat (Arab / Latin)..."
+            placeholder={t("surahSearchPlaceholder")}
             value={surahSearch}
             onChange={(e) => {
               setSurahSearch(e.target.value);
@@ -570,7 +669,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                 s.arti.toLowerCase().includes(q)
               );
             }).length === 0 && (
-              <div className="surah-dropdown-empty">Tidak ditemukan</div>
+              <div className="surah-dropdown-empty">{t("surahNotFound")}</div>
             )}
           </div>
         )}
@@ -597,7 +696,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             onClick={prevAyat}
             disabled={currentAyat <= 1}
           >
-            &#8592; Sebelumnya
+            &#8592; {t("prev")}
           </button>
 
           <select
@@ -622,7 +721,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             onClick={nextAyat}
             disabled={currentAyat >= totalAyat}
           >
-            Selanjutnya &rarr;
+            {t("next")} &rarr;
           </button>
         </div>
 
@@ -660,34 +759,34 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
         <div className="analyze-section">
           {!analysis && !analyzing && (
             <button className="analyze-btn" onClick={handleAnalyze}>
-              🤖 Analisa Ayat
+              🤖 {t("analyzeBtn")}
             </button>
           )}
 
           {analyzing && (
             <div className="analyzing">
               <div className="spinner" />
-              <span>Menganalisis ayat dengan AI...</span>
+              <span>{t("analyzing")}</span>
             </div>
           )}
 
           {analysis && (
             <div className="analysis-result" ref={analysisRef}>
               <div className="analysis-header">
-                <span className="analysis-title">📊 Analisa Ayat</span>
+                <span className="analysis-title">📊 {t("analysisTitle")}</span>
                 <div className="analysis-actions">
                   <button
                     className="analysis-regen-btn"
                     onClick={handleAnalyze}
                     disabled={analyzing}
-                    title="Analisa ulang"
+                    title={t("regenTitle")}
                   >
                     🔄
                   </button>
                   <button
                     className="analysis-close-btn"
                     onClick={clearAnalysis}
-                    title="Tutup"
+                    title={t("closeTitle")}
                   >
                     ✕
                   </button>
@@ -696,7 +795,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
               {/* Word-by-word nav — pakai ayatWords langsung kalo gak ada parsed entries */}
               {(wordEntries.length > 0 || ayatWords.length > 1) && (
                 <div className="word-nav-section">
-                  <div className="word-nav-title">📖 Kata Per Kata</div>
+                  <div className="word-nav-title">📖 {t("wordNavTitle")}</div>
                   <div className="word-nav-list">
                     {(wordEntries.length > 0 ? wordEntries : ayatWords.map((w, i) => ({ arabic: w }))).map((entry, i) => (
                       <div
@@ -737,7 +836,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                     className={`chat-bubble ${m.role === "user" ? "chat-user" : "chat-ai"}`}
                   >
                     <div className="chat-label">
-                      {m.role === "user" ? "Kamu" : "AI"}
+                      {m.role === "user" ? t("chatLabelUser") : t("chatLabelAI")}
                     </div>
                     <Markdown
                       components={MarkdownComponents}
@@ -750,13 +849,13 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                 {chatSending && (
                   <div className="chat-typing">
                     <div className="spinner" />
-                    <span>Mengetik...</span>
+                    <span>{t("chatTyping")}</span>
                   </div>
                 )}
                 <div className="chat-input-row">
                   <input
                     className="chat-input"
-                    placeholder="Tanya detail analisa..."
+                    placeholder={t("chatPlaceholder")}
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -772,7 +871,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                     onClick={sendChat}
                     disabled={!chatInput.trim() || chatSending}
                   >
-                    Kirim
+                    {t("chatSend")}
                   </button>
                 </div>
                 <div ref={chatRef} />
@@ -784,7 +883,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
         {/* Progress */}
         <div className="progress-bar-wrapper">
           <div className="progress-text">
-            Ayat {currentAyat} dari {totalAyat}
+            {t("progressText", { current: currentAyat, total: totalAyat })}
           </div>
           <div className="progress-bar">
             <div
@@ -801,7 +900,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             onClick={prevAyat}
             disabled={currentAyat <= 1}
           >
-            &#8592; Sebelumnya
+            &#8592; {t("prev")}
           </button>
 
           <select
@@ -826,7 +925,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
             onClick={nextAyat}
             disabled={currentAyat >= totalAyat}
           >
-            Selanjutnya &rarr;
+            {t("next")} &rarr;
           </button>
         </div>
       </main>
@@ -834,14 +933,14 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
       {/* Footer */}
       <footer className="footer">
         <p>
-          Ada saran, pertanyaan, atau mau donasi?{" "}
+          {t("footerText")}{" "}
           <a
             href="https://x.com/akhmaddaniel"
             target="_blank"
             rel="noopener noreferrer"
             className="footer-link"
           >
-            @akhmaddaniel
+            {t("footerHandle")}
           </a>
         </p>
       </footer>
@@ -852,8 +951,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">🔑 DeepSeek API Key</h3>
             <p className="modal-desc">
-              Masukkan API key untuk fitur analisa ayat. Bisa juga pakai env{" "}
-              <code>VITE_DEEPSEEK_API_KEY</code> di Vercel dashboard.
+              {t("modalDesc")}
             </p>
             <input
               type="password"
@@ -864,13 +962,13 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
               autoFocus
             />
             <p className="modal-hint">
-              Belum punya?{" "}
+              {t("modalHint")}{" "}
               <a
                 href="https://platform.deepseek.com/api_keys"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Daftar di sini
+                {t("modalHintLink")}
               </a>
             </p>
             <div className="modal-actions">
@@ -878,14 +976,14 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                 className="modal-cancel"
                 onClick={() => setShowKeyModal(false)}
               >
-                Batal
+                {t("modalCancel")}
               </button>
               <button
                 className="modal-save"
                 onClick={handleSaveKey}
                 disabled={!keyInput.trim()}
               >
-                Simpan
+                {t("modalSave")}
               </button>
             </div>
           </div>

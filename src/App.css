@@ -32,10 +32,12 @@ body {
 
 /* Header */
 .header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   padding: 16px 0 8px;
 }
-
 
 .title {
   font-size: 1.5rem;
@@ -44,6 +46,33 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.lang-toggle {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.lang-toggle:hover {
+  background: #334155;
+  border-color: #eab308;
+  color: #e2e8f0;
+}
+
+.lang-label {
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
 }
 
 

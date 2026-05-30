@@ -196,10 +196,9 @@ ${latin ? `**Latin:** ${latin}` : ""}
 
 Berikan analisis dengan format berikut (gunakan markdown sederhana):
 
-1. **Terjemahan Kata Per Kata** — setiap kata Arab ditulis tebal **kata** lalu diikuti artinya. Contoh: **الْحَمْدُ** — Segala puji
-2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
-3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
-4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
+1. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
+2. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
+3. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
   };
 
   const handleAnalyze = async () => {
@@ -645,12 +644,12 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                   </button>
                 </div>
               </div>
-              {/* Word-by-word nav */}
-              {wordEntries.length > 0 && (
+              {/* Word-by-word nav — pakai ayatWords langsung kalo gak ada parsed entries */}
+              {(wordEntries.length > 0 || ayatWords.length > 1) && (
                 <div className="word-nav-section">
                   <div className="word-nav-title">📖 Kata Per Kata</div>
                   <div className="word-nav-list">
-                    {wordEntries.map((entry, i) => (
+                    {(wordEntries.length > 0 ? wordEntries : ayatWords.map((w, i) => ({ arabic: w }))).map((entry, i) => (
                       <div
                         key={i}
                         ref={(el) => { wordRefs.current[i] = el; }}
@@ -658,10 +657,14 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                         onClick={() => scrollToWord(i)}
                       >
                         <span className="word-nav-arabic">{entry.arabic}</span>
-                        <span className="word-nav-arrow">→</span>
-                        <span className="word-nav-meaning">
-                          {entry.original.replace(/^\s*-\s*\*\*[^\*]+\*\*\s*[—–-]?\s*/, "").trim()}
-                        </span>
+                        {entry.original && (
+                          <>
+                            <span className="word-nav-arrow">→</span>
+                            <span className="word-nav-meaning">
+                              {entry.original.replace(/^\s*-\s*\*\*[^\*]+\*\*\s*[—–-]?\s*/, "").trim()}
+                            </span>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>

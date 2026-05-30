@@ -697,12 +697,12 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
         <p>
           Ada saran, pertanyaan, atau mau donasi?{" "}
           <a
-            href="https://x.com/akhdaniel"
+            href="https://x.com/akhmaddaniel"
             target="_blank"
             rel="noopener noreferrer"
             className="footer-link"
           >
-            @akhdaniel
+            @akhmaddaniel
           </a>
         </p>
       </footer>

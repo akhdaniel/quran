@@ -287,7 +287,7 @@ Berikan analisis dengan format berikut (gunakan markdown sederhana):
       }, 100);
     } catch (err) {
       setAnalysis(
-        `**Error:** ${err.message}\n\n> 💡 Pastikan \`VITE_DEEPSEEK_API_KEY\` sudah di-set di Vercel env vars, atau masukkan key manual lewat tombol ⚙️.`
+        `**Error:** ${err.message}\n\n> 💡 Pastikan \`VITE_DEEPSEEK_API_KEY\` sudah di-set di Vercel env vars.`
       );
     } finally {
       setAnalyzing(false);
@@ -502,19 +502,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
     <div className="app">
       {/* Header */}
       <header className="header">
-        <div className="header-row">
-          <h1 className="title">Al-Qur&apos;an</h1>
-          <button
-            className="key-btn"
-            onClick={() => {
-              setKeyInput(getApiKey() || "");
-              setShowKeyModal(true);
-            }}
-            title={hasKey ? "Ganti API Key" : "Set API Key"}
-          >
-            {hasKey ? "🔑" : "⚙️"}
-          </button>
-        </div>
+        <h1 className="title">Al-Qur&apos;an</h1>
       </header>
 
       {/* Surah Search */}

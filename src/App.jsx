@@ -196,9 +196,10 @@ ${latin ? `**Latin:** ${latin}` : ""}
 
 Berikan analisis dengan format berikut (gunakan markdown sederhana):
 
-1. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
-2. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
-3. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
+1. **Terjemahan Kata Per Kata** — setiap kata Arab ditulis tebal **kata** lalu diikuti artinya. Contoh: **الْحَمْدُ** — Segala puji
+2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci
+3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
+4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
   };
 
   const handleAnalyze = async () => {
@@ -676,7 +677,7 @@ Jika user bertanya di luar topik tafsir Al-Qur'an, tolak dengan sopan dan ajak k
                   components={MarkdownComponents}
                   remarkPlugins={[remarkGfm]}
                 >
-                  {analysis}
+                  {analysis?.replace(/\*\*Terjemahan Kata Per Kata\*\*[\s\S]*?(?=\*\*Bentukan|$)/, "")}
                 </Markdown>
               </div>
 

@@ -159,14 +159,15 @@ function App() {
 
     const id = ++loadIdRef.current;
     loadAnalysis(surahNomor, currentAyat, id);
-  }, [surahNomor, currentAyat]);
+  }, [surahNomor, currentAyat, lang]);
 
   const loadAnalysis = async (surah, ayat, id) => {
-    const localKey = `${STORAGE_PREFIX}${surah}-${ayat}`;
+    const suffix = lang || "id";
+    const localKey = `${STORAGE_PREFIX}${surah}-${ayat}-${suffix}`;
 
     // Coba dari API dulu
     try {
-      const res = await fetch(`/api/analysis?surah=${surah}&ayat=${ayat}`);
+      const res = await fetch(`/api/analysis?surah=${surah}&ayat=${ayat}&lang=${lang || "id"}`);
       if (res.ok) {
         const data = await res.json();
         if (data?.content) {
@@ -196,14 +197,14 @@ function App() {
       fetch("/api/analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ surah, ayat, content }),
+        body: JSON.stringify({ surah, ayat, content, lang: lang || "id" }),
       }).then((r) => {
         if (!r.ok) console.warn("Backend sync failed:", r.status);
       }).catch((e) => console.warn("Backend sync error:", e.message));
     }
 
     // Load chat history (selalu, baik dr API maupun localStorage)
-    const chatKey = `chat-${surah}-${ayat}`;
+    const chatKey = `chat-${surah}-${ayat}-${lang || "id"}`;
     const chatCached = localStorage.getItem(chatKey);
     if (id !== loadIdRef.current) return; // stale
     if (chatCached) {
@@ -359,7 +360,8 @@ function App() {
         data.choices?.[0]?.message?.content || "Tidak ada respons.";
 
       // Cache (local + backend)
-      const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
+      const suffix = lang || "id";
+      const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}-${suffix}`;
       localStorage.setItem(cacheKey, JSON.stringify(result));
       setAnalysis(result);
 
@@ -371,6 +373,7 @@ function App() {
           surah: surahNomor,
           ayat: currentAyat,
           content: result,
+          lang: lang || "id",
         }),
       }).then((r) => {
         if (!r.ok) console.warn("Backend save failed:", r.status);
@@ -401,9 +404,10 @@ function App() {
   };
 
   const clearAnalysis = () => {
-    const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}`;
+    const suffix = lang || "id";
+    const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}-${suffix}`;
     localStorage.removeItem(cacheKey);
-    localStorage.removeItem(`chat-${surahNomor}-${currentAyat}`);
+    localStorage.removeItem(`chat-${surahNomor}-${currentAyat}-${suffix}`);
     setAnalysis(null);
     setChatMessages([]);
   };
@@ -457,7 +461,7 @@ function App() {
       setChatMessages(finalMessages);
 
       // Simpan chat ke localStorage
-      const chatKey = `chat-${surahNomor}-${currentAyat}`;
+      const chatKey = `chat-${surahNomor}-${currentAyat}-${lang || "id"}`;
       localStorage.setItem(chatKey, JSON.stringify(finalMessages));
 
       setTimeout(() => {

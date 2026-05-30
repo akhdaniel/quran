@@ -29,12 +29,12 @@ export default async function handler(req, res) {
 
   // POST — simpan
   if (req.method === "POST") {
-    const { surah, ayat, content } = req.body || {};
+    const { surah, ayat, content, lang } = req.body || {};
     if (!surah || !ayat || !content) {
       return res.status(400).json({ error: "surah, ayat, content required" });
     }
 
-    const key = `${PREFIX}${surah}-${ayat}.json`;
+    const key = `${PREFIX}${surah}-${ayat}-${lang || "id"}.json`;
 
     try {
       const result = await put(key, JSON.stringify({
@@ -55,12 +55,12 @@ export default async function handler(req, res) {
 
   // GET — ambil
   if (req.method === "GET") {
-    const { surah, ayat } = req.query;
+    const { surah, ayat, lang } = req.query;
     if (!surah || !ayat) {
       return res.status(400).json({ error: "surah and ayat required" });
     }
 
-    const key = `${PREFIX}${surah}-${ayat}.json`;
+    const key = `${PREFIX}${surah}-${ayat}-${lang || "id"}.json`;
 
     try {
       const result = await get(key, { access: "private", token });

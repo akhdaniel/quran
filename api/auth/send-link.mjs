@@ -2,9 +2,7 @@
 import { storeMagicLink } from "../_auth.mjs";
 
 const SMTP2GO_API = "https://api.smtp2go.com/v3/email/send";
-const APP_URL = process.env.VERCEL_URL
-  ? "https://" + process.env.VERCEL_URL
-  : "https://quran-kappa-rosy.vercel.app";
+const APP_URL = "https://quran-kappa-rosy.vercel.app";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");

@@ -466,20 +466,26 @@ body {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: none;
-  border: none;
+  background: var(--bg-elevated, #1e293b);
+  border: 1px solid var(--border-primary, #334155);
   font-size: 1.2rem;
   cursor: pointer;
-  padding: 6px;
+  padding: 6px 8px;
   border-radius: 8px;
-  transition: background 0.2s;
-  opacity: 0.6;
+  transition: all 0.2s;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.8;
   z-index: 2;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .share-btn:hover {
-  background: var(--bg-hover, rgba(255,255,255,0.1));
+  background: var(--bg-hover, #334155);
+  color: var(--text-primary, #e2e8f0);
+  border-color: var(--accent-blue, #3b82f6);
   opacity: 1;
 }
 
@@ -1335,19 +1341,25 @@ body {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: none;
-  border: none;
+  background: var(--bg-elevated, #1e293b);
+  border: 1px solid var(--border-primary, #334155);
   font-size: 1.2rem;
   cursor: pointer;
-  padding: 6px;
+  padding: 6px 8px;
   border-radius: 8px;
-  transition: background 0.2s;
-  opacity: 0.6;
+  transition: all 0.2s;
+  color: var(--text-muted, #94a3b8);
+  opacity: 0.8;
   z-index: 2;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .share-btn:hover {
-  background: var(--bg-hover, rgba(255,255,255,0.1));
+  background: var(--bg-hover, #334155);
+  color: var(--text-primary, #e2e8f0);
+  border-color: var(--accent-blue, #3b82f6);
   opacity: 1;
 }

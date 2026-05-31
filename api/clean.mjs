@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     for (const surah of data.surahs) {
       for (const ayat of surah.ayat) {
         const original = ayat.teksArab;
-        const cleanedText = ayat.teksArab.replace(stripRegex, '').trim();
+        let cleanedText = ayat.teksArab.replace(stripRegex, ' ').replace(/\s{2,}/g, ' ').trim();
         if (cleanedText !== original) {
           ayat.teksArab = cleanedText;
           cleaned++;

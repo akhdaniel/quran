@@ -120,7 +120,7 @@ export default async function handler(req, res) {
             const arab = a.teksArab || "";
             const translation = lang === "en" && a.teksInggris ? a.teksInggris : a.teksIndonesia || "";
             const latinSegment = a.teksLatin ? "**Latin:** " + a.teksLatin + "\n\n" : "";
-            const surahInfo = "**Surah:** " + (task.surah || "") + " - Ayat " + (task.ayat || "") + "\n\n";
+            const surahInfo = "**Surah:** " + (s.nomor || "") + " - Ayat " + (a.nomor || "") + "\n\n";
             const prompt = (lang === "en" ? PROMPT_EN : PROMPT_ID)
               .replace("{surahInfo}", surahInfo)
               .replace("{arab}", arab)

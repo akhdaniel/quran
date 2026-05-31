@@ -23,7 +23,8 @@ const PROMPT_ID = `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstr
 1. **Terjemahan Kata Per Kata** — tiap kata: - **tulis kata dalam huruf Arab** — artinya
 2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci, beserta arti/konsep dari kata dasar tersebut
 3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
-4. **Tafsir Singkat** — penjelasan singkat makna ayat, minimal dari 3 sumber tafsir berikut: Ibnu Katsir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurthubi, Ath-Thabari, Sayyid Qutb`;
+4. **Tafsir Singkat** — penjelasan singkat makna ayat, minimal dari 3 sumber tafsir berikut: Ibnu Katsir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurthubi, Ath-Thabari, Sayyid Qutb
+5. **Asbabun Nuzul** — sebab-sebab turunnya ayat ini (riwayat yang shahih), jika ada. Jika tidak ada riwayat khusus, sebutkan bahwa ayat ini diturunkan tanpa sebab khusus (ghairu sababin nuzul) dan tetap berikan konteks historisnya`;
 
 // EN Prompt
 const PROMPT_EN = `Analyze the following Qur'anic verse deeply and in a structured manner in English. Get straight to the analysis, no introduction or closing.
@@ -39,7 +40,8 @@ const PROMPT_EN = `Analyze the following Qur'anic verse deeply and in a structur
 1. **Word-by-Word Translation** — each word: - **write the word in Arabic script** — meaning
 2. **Word Formation (Sarf/Morphology)** — analysis of root word forms (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, etc.) for key words, with the meaning/concept of each root word
 3. **Balaghah (Rhetoric)** — analysis of rhetorical devices and linguistic beauty: uslub (style), kinayah/majaz (metaphor), fashahah (eloquence), unique word arrangement
-4. **Brief Tafsir** — concise explanation from at least 3 of these tafsir sources: Ibn Kathir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurtubi, At-Tabari, Sayyid Qutb`;
+4. **Brief Tafsir** — concise explanation from at least 3 of these tafsir sources: Ibn Kathir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurtubi, At-Tabari, Sayyid Qutb
+5. **Asbabun Nuzul (Occasion of Revelation)** — the authentic reasons/context for this verse's revelation, if known. If no specific narration exists, state that the verse was revealed without a specific occasion (ghairu sababin nuzul) and still provide its historical context`;
 
 async function loadQuranData() {
   const blob = await get("quran-data/full.json", { access: "private", token: BLOB_TOKEN });

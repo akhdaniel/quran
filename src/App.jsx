@@ -3,8 +3,6 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./App.css";
 
-const API_BASE = "https://equran.id/api/v2";
-const ENGLISH_API = "https://api.alquran.cloud/v1";
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const STORAGE_PREFIX = "analysis-";
 
@@ -233,112 +231,51 @@ function App() {
     }
   };
 
-  // Baca parameter URL untuk direct link (?surah=X&ayat=Y)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const s = params.get("surah");
-    const a = params.get("ayat");
-    if (s && a) {
-      const targetSurah = Number(s);
-      const targetAyat = Number(a);
-      // Fetch the surah directly with the target number
-      const isEn = lang === "en";
-      Promise.all([
-        fetch(API_BASE + "/surat/" + targetSurah).then(function(r) { return r.json(); }),
-        isEn
-          ? fetch(ENGLISH_API + "/surah/" + targetSurah + "/en.sahih").then(function(r) { return r.json(); }).catch(function() { return null; })
-          : Promise.resolve(null),
-      ]).then(function(results) {
-        var idData = results[0];
-        var enData = results[1];
-        if (idData.code === 200) {
-          var surah = Object.assign({}, idData.data);
-          var ayats = [].concat(surah.ayat);
-          var newSurahNomor = targetSurah;
-          if (isEn && enData && enData.data && enData.data.ayahs) {
-            ayats = ayats.map(function(ayat, idx) {
-              return Object.assign({}, ayat, { teksInggris: enData.data.ayahs[idx] ? enData.data.ayahs[idx].text : "" });
-            });
-            surah.arti = enData.data.englishNameTranslation || surah.arti;
-          } else {
-            ayats = ayats.map(function(ayat) {
-              return Object.assign({}, ayat, { teksInggris: "" });
-            });
-          }
-          setCurrentSurah(surah);
-          setVerses(ayats);
-          setSurahNomor(targetSurah);
-          setCurrentAyat(targetAyat);
-          setLoading(false);
-        }
-      }).catch(console.error);
+  // Helper: extract surah & ayat from local data (defined before useEffect)
+  function loadLocalSurah(nomor, data) {
+    var surahList = data || surahs;
+    var surah = surahList.find(function(s) { return s.nomor === nomor; });
+    if (surah) {
+      setCurrentSurah(surah);
+      setVerses(surah.ayat || []);
+      setSurahNomor(nomor);
+      setCurrentAyat(1);
+      setLoading(false);
     }
-  }, []);
+  }
 
-  // Fetch daftar surat (surah selector data)
-  // If no URL params, load first surah as default
-  useEffect(function() {
-    fetch(API_BASE + "/surat")
+  // Load full Quran data from Vercel Blob storage (sekali)
+  useEffect(() => {
+    fetch("/api/quran-data")
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        if (d.code === 200) {
-          setSurahs(d.data);
-          // Check if URL params already loaded a surah
-          var hasUrlParams = window.location.search.includes("surah=");
-          if (!hasUrlParams) {
-            var first = d.data[0];
-            loadSurah(first.nomor);
+        if (d.surahs && d.surahs.length > 0) {
+          setSurahs(d.surahs);
+          
+          // Check URL params for direct link
+          var params = new URLSearchParams(window.location.search);
+          var targetSurah = Number(params.get("surah"));
+          var targetAyat = Number(params.get("ayat"));
+          
+          if (targetSurah > 0) {
+            loadLocalSurah(targetSurah, d.surahs);
+            setCurrentAyat(targetAyat > 0 ? targetAyat : 1);
+          } else {
+            loadLocalSurah(d.surahs[0].nomor, d.surahs);
           }
         }
-      }).catch(console.error);
+      }).catch(function(e) {
+        console.error("Failed to load Quran data:", e);
+      });
   }, []);
 
-  const loadSurah = useCallback((nomor) => {
-    setLoading(true);
+  const loadSurah = useCallback(function(nomor) {
+    setLoading(false);
     setCurrentAyat(1);
     setJumpValue("");
     setAnalysis(null);
-
-    const isEn = lang === "en";
-
-    Promise.all([
-      // Data utama dari equran.id (Arab + Indonesia)
-      fetch(`${API_BASE}/surat/${nomor}`).then((r) => r.json()),
-      // English translation dari alquran.cloud (kalo EN)
-      isEn
-        ? fetch(`${ENGLISH_API}/surah/${nomor}/en.sahih`)
-            .then((r) => r.json())
-            .catch(() => null)
-        : Promise.resolve(null),
-    ])
-      .then(([idData, enData]) => {
-        if (idData.code === 200) {
-          const surah = { ...idData.data };
-          let ayats = [...surah.ayat];
-
-          // Merge English translation
-          if (isEn && enData?.data?.ayahs) {
-            ayats = ayats.map((ayat, i) => ({
-              ...ayat,
-              teksInggris: enData.data.ayahs[i]?.text || "",
-            }));
-            // Update surah arti ke English
-            surah.arti = enData.data.englishNameTranslation || surah.arti;
-          } else {
-            ayats = ayats.map((ayat) => ({
-              ...ayat,
-              teksInggris: "",
-            }));
-          }
-
-          setCurrentSurah(surah);
-          setVerses(ayats);
-          setSurahNomor(nomor);
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [lang]);
+    loadLocalSurah(nomor);
+  }, []);
 
   const totalAyat = verses.length;
   const ayat = verses[currentAyat - 1] || {};

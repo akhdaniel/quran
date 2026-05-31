@@ -150,6 +150,7 @@ function App() {
   const [keyInput, setKeyInput] = useState("");
   const [surahSearch, setSurahSearch] = useState("");
   const [showSurahDropdown, setShowSurahDropdown] = useState(false);
+  const [showAyatDropdown, setShowAyatDropdown] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
@@ -827,22 +828,36 @@ function App() {
             &#8592; {t("prev")}
           </button>
 
-          <select
-            className="jump-select"
-            value={currentAyat}
-            onChange={(e) => setCurrentAyat(Number(e.target.value))}
-          >
-            {verses.map((v, i) => {
-              const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
-              const first = words[0] || "";
-              const last = words.length > 1 ? words[words.length - 1] : "";
-              return (
-                <option key={i} value={i + 1}>
-                  {i + 1}. {first}{last ? " ... " + last : ""}
-                </option>
-              );
-            })}
-          </select>
+          <div className="jump-wrap">
+            <button
+              className="jump-btn"
+              onClick={() => setShowAyatDropdown(!showAyatDropdown)}
+              onBlur={() => setTimeout(() => setShowAyatDropdown(false), 200)}
+            >
+              {currentAyat} <span className="jump-arrow">▾</span>
+            </button>
+            {showAyatDropdown && (
+              <div className="jump-dropdown">
+                {verses.map((v, i) => {
+                  const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
+                  const first = words[0] || "";
+                  const last = words.length > 1 ? words[words.length - 1] : "";
+                  return (
+                    <div
+                      key={i}
+                      className={"jump-item" + (i + 1 === currentAyat ? " active" : "")}
+                      onMouseDown={() => {
+                        setCurrentAyat(i + 1);
+                        setShowAyatDropdown(false);
+                      }}
+                    >
+                      {i + 1}. {first}{last ? " ... " + last : ""}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <button
             className="nav-btn"
@@ -1020,22 +1035,36 @@ function App() {
             &#8592; {t("prev")}
           </button>
 
-          <select
-            className="jump-select"
-            value={currentAyat}
-            onChange={(e) => setCurrentAyat(Number(e.target.value))}
-          >
-            {verses.map((v, i) => {
-              const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
-              const first = words[0] || "";
-              const last = words.length > 1 ? words[words.length - 1] : "";
-              return (
-                <option key={i} value={i + 1}>
-                  {i + 1}. {first}{last ? " ... " + last : ""}
-                </option>
-              );
-            })}
-          </select>
+          <div className="jump-wrap">
+            <button
+              className="jump-btn"
+              onClick={() => setShowAyatDropdown(!showAyatDropdown)}
+              onBlur={() => setTimeout(() => setShowAyatDropdown(false), 200)}
+            >
+              {currentAyat} <span className="jump-arrow">▾</span>
+            </button>
+            {showAyatDropdown && (
+              <div className="jump-dropdown">
+                {verses.map((v, i) => {
+                  const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
+                  const first = words[0] || "";
+                  const last = words.length > 1 ? words[words.length - 1] : "";
+                  return (
+                    <div
+                      key={i}
+                      className={"jump-item" + (i + 1 === currentAyat ? " active" : "")}
+                      onMouseDown={() => {
+                        setCurrentAyat(i + 1);
+                        setShowAyatDropdown(false);
+                      }}
+                    >
+                      {i + 1}. {first}{last ? " ... " + last : ""}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <button
             className="nav-btn"

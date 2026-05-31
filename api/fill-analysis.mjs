@@ -4,7 +4,7 @@ import { put, get } from "@vercel/blob";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
 const PROGRESS_KEY = "analysis/progress.json";
 const BATCH = 5; // 5 ayat per panggilan
 const PREFIX = "analysis/";
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (!BLOB_TOKEN) return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
-  if (!DEEPSEEK_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set in Vercel env" });
+  if (!DEEPSEEK_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set. Set DEEPSEEK_API_KEY or VITE_DEEPSEEK_API_KEY in Vercel env" });
 
   try {
     // Load data & progress

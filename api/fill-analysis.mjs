@@ -120,7 +120,9 @@ export default async function handler(req, res) {
             const arab = a.teksArab || "";
             const translation = lang === "en" && a.teksInggris ? a.teksInggris : a.teksIndonesia || "";
             const latinSegment = a.teksLatin ? "**Latin:** " + a.teksLatin + "\n\n" : "";
+            const surahInfo = "**Surah:** " + (item.surah || "") + " - Ayat " + (item.ayat || "") + "\n\n";
             const prompt = (lang === "en" ? PROMPT_EN : PROMPT_ID)
+              .replace("{surahInfo}", surahInfo)
               .replace("{arab}", arab)
               .replace("{translation}", translation)
               .replace("{latinSegment}", latinSegment);
@@ -162,7 +164,7 @@ export default async function handler(req, res) {
             },
             { role: "user", content: task.prompt },
           ],
-          max_tokens: 4000,
+          max_tokens: 8192,
           temperature: 0.3,
         }),
       });

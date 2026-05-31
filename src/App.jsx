@@ -778,7 +778,39 @@ function App() {
         >
           🌐 <span className="lang-label">{lang === "id" ? "ID" : "EN"}</span>
         </button>
+        <button
+          className="settings-btn"
+          onClick={() => setShowSettings(!showSettings)}
+          title={lang === "id" ? "Pengaturan" : "Settings"}
+        >
+          ⚙
+        </button>
       </header>
+
+      {showSettings && (
+        <div className="settings-modal" onClick={() => setShowSettings(false)}>
+          <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="settings-title">{lang === "id" ? "Pengaturan" : "Settings"}</div>
+            <div className="settings-section">
+              <div className="settings-label">{lang === "id" ? "Pilih Qori" : "Choose Reciter"}</div>
+              {qariList.map(function(q) {
+                return (
+                  <label key={q.id} className={"settings-radio" + (selectedQari === q.id ? " active" : "")}>
+                    <input
+                      type="radio"
+                      name="qari"
+                      value={q.id}
+                      checked={selectedQari === q.id}
+                      onChange={function() { setSelectedQari(q.id); }}
+                    />
+                    <span>{q.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Surah Search */}
       <div className="surah-selector">

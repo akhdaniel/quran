@@ -1,29 +1,42 @@
-// GET /api/auth/debug — check env vars (for debugging only)
+// GET /api/auth/debug — check SMTP2GO key + test send
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   
-  const checkVars = [
-    "SMTP2GO_API_KEY",
-    "smtp2go_api_key",
-    "SMTP2GO_APIKEY",
-    "Smtp2goApiKey",
-    "VITE_DEEPSEEK_API_KEY",
-    "DEEPSEEK_API_KEY",
-    "BLOB_READ_WRITE_TOKEN",
-  ];
+  const rawKey = process.env.SMTP2GO_API_KEY || "";
+  const trimmed = rawKey.trim();
   
-  const result = {};
-  for (const key of checkVars) {
-    const val = process.env[key];
-    result[key] = val ? val.slice(0, 4) + "..." + val.slice(-4) : null;
+  // Try to send with the key to verify it works from Vercel
+  const testResult = { status: "not_tested" };
+  if (trimmed) {
+    try {
+      const testPayload = {
+        api_key: trimmed,
+        to: ["test@smtp2go.com"], // SMTP2GO test address
+        sender: "quran@xerpium.com",
+        subject: "Test from Vercel",
+        text_body: "Test"
+      };
+      const r = await fetch("https://api.smtp2go.com/v3/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(testPayload),
+      });
+      const data = await r.json();
+      testResult.status = r.ok ? "ok" : "error";
+      testResult.response = data;
+      testResult.httpStatus = r.status;
+    } catch (e) {
+      testResult.status = "fetch_error";
+      testResult.error = e.message;
+    }
   }
   
-  // Also list all env vars (masked values)
-  const allVars = {};
-  for (const key of Object.keys(process.env).sort()) {
-    const val = process.env[key];
-    allVars[key] = val ? val.slice(0, 3) + "..." + val.slice(-3) : null;
-  }
-  
-  return res.status(200).json({ checkVars: result, allKeys: Object.keys(process.env).sort() });
+  return res.status(200).json({
+    keyExists: !!rawKey,
+    keyLength: rawKey.length,
+    trimmedLength: trimmed.length,
+    keyPrefix: trimmed.slice(0, 8) + "...",
+    keySuffix: "..." + trimmed.slice(-6),
+    testResult,
+  });
 }

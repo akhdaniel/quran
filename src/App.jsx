@@ -151,7 +151,7 @@ function App() {
   const [surahSearch, setSurahSearch] = useState("");
   const [showSurahDropdown, setShowSurahDropdown] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(null);
-  const audioRef = useRef(new Audio());
+  const audioRef = useRef(null);
   const [showAyatDropdown, setShowAyatDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const qariList = [
@@ -535,36 +535,42 @@ function App() {
   const handlePlay = () => {
     if (!ayat?.teksArab) return;
     
+    // Create Audio on first use
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+    }
+    var audio = audioRef.current;
+    
     // Pause/resume if same ayat
     if (audioPlaying === currentAyat) {
-      if (audioRef.current.paused) {
-        audioRef.current.play();
+      if (audio.paused) {
+        audio.play();
       } else {
-        audioRef.current.pause();
+        audio.pause();
       }
       return;
     }
     
     // Stop previous
     if (audioPlaying) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      audio.pause();
+      audio.currentTime = 0;
     }
     
-    const surahStr = String(surahNomor).padStart(3, "0");
-    const ayatStr = String(currentAyat).padStart(3, "0");
-    const qariName = qariList.find(function(q) { return q.id === selectedQari; })?.name || qariList[0].name;
-    const audioUrl = "https://cdn.equran.id/audio-partial/" + qariName + "/" + surahStr + ayatStr + ".mp3";
+    var surahStr = String(surahNomor).padStart(3, "0");
+    var ayatStr = String(currentAyat).padStart(3, "0");
+    var qariName = qariList.find(function(q) { return q.id === selectedQari; })?.name || qariList[0].name;
+    var audioUrl = "https://cdn.equran.id/audio-partial/" + qariName + "/" + surahStr + ayatStr + ".mp3";
     
-    audioRef.current.src = audioUrl;
-    audioRef.current.play();
+    audio.src = audioUrl;
+    audio.play().catch(function() { setAudioPlaying(null); });
     setAudioPlaying(currentAyat);
     
-    audioRef.current.onended = () => setAudioPlaying(null);
-    audioRef.current.onerror = () => {
+    audio.onended = function() { setAudioPlaying(null); };
+    audio.onerror = function() {
       setAudioPlaying(null);
-      audioRef.current.src = "https://cdn.equran.id/audio-partial/" + qariList[0].name + "/" + surahStr + ayatStr + ".mp3";
-      audioRef.current.play().catch(() => setAudioPlaying(null));
+      audio.src = "https://cdn.equran.id/audio-partial/" + qariList[0].name + "/" + surahStr + ayatStr + ".mp3";
+      audio.play().catch(function() { setAudioPlaying(null); });
     };
   };
 
@@ -969,7 +975,7 @@ function App() {
         >
           <div className="ayat-toolbar">
             <button className="ayat-btn play-btn" onClick={handlePlay} title={lang === "id" ? "Putar audio" : "Play audio"}>
-              {audioPlaying === currentAyat && !audioRef.current.paused ? "⏸" : "▶"}
+              {audioPlaying === currentAyat ? "⏸" : "▶"}
             </button>
             <span className="ayat-btn num-btn">{ayat.nomor || currentAyat}</span>
             <button className="ayat-btn share-btn" onClick={() => handleShare()} title={lang === "id" ? "Bagikan" : "Share"}>

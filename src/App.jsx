@@ -915,7 +915,7 @@ function App() {
             <button className="play-btn" onClick={handlePlay} title={lang === "id" ? "Putar audio" : "Play audio"}>
               {audioPlaying === currentAyat ? "⏸" : "▶"}
             </button>
-            {ayat.nomor || currentAyat}
+            <span className="ayat-num-text">{ayat.nomor || currentAyat}</span>
           </div>
           <button
             className="share-btn"

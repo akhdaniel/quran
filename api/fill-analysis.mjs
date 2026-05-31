@@ -1,6 +1,6 @@
 // POST /api/fill-analysis — generate analysis untuk ayat yang belum ada
 // Proses 5 ayat per panggilan, simpan progress di Blob
-import { put, get, del } from "@vercel/blob";
+import { put, get } from "@vercel/blob";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
@@ -92,39 +92,10 @@ export default async function handler(req, res) {
   const resetTo = body.reset !== undefined ? parseInt(body.reset, 10) : null;
   if (resetTo !== null && !isNaN(resetTo) && resetTo >= 0) {
     await saveProgress({ current: resetTo, total: 12472 });
-    if (body.clean === true) {
-      // Delete all existing analysis files from reset point onward using list + parallel batch delete
-      const quranData = await loadQuranData();
-      if (quranData) {
-        let deleted = 0;
-        // Collect all keys from reset point
-        const keysToDelete = [];
-        let idx = 0;
-        for (const s of quranData.surahs) {
-          for (const a of s.ayat) {
-            for (const lang of ["id", "en"]) {
-              if (idx >= resetTo) {
-                keysToDelete.push(PREFIX + s.nomor + "-" + a.nomor + "-" + lang + ".json");
-              }
-              idx++;
-            }
-          }
-        }
-        // Delete in parallel batches of 50
-        for (let i = 0; i < keysToDelete.length; i += 50) {
-          const batch = keysToDelete.slice(i, i + 50);
-          await Promise.all(batch.map(async (key) => {
-            try {
-              await del(key, { access: "private", token: BLOB_TOKEN });
-              return 1;
-            } catch { return 0; }
-          }));
-        }
-        return res.status(200).json({ ok: true, message: "Progress reset to " + resetTo + " and analysis files cleaned", progress: { current: resetTo, total: 12472 }, cleaned: keysToDelete.length });
-      }
-    }
     return res.status(200).json({ ok: true, message: "Progress reset to index " + resetTo, progress: { current: resetTo, total: 12472 } });
   }
+  
+  const forceReanalyze = body.force === true;
 
   try {
     // Load data & progress
@@ -155,7 +126,7 @@ export default async function handler(req, res) {
           if (tasks.length >= BATCH) break;
           if (idx < progress.current) { idx++; continue; }
           scanned++;
-          const exists = await getAnalysis(s.nomor, a.nomor, lang);
+          const exists = forceReanalyze ? false : await getAnalysis(s.nomor, a.nomor, lang);
           if (!exists) {
             const arab = a.teksArab || "";
             const translation = lang === "en" && a.teksInggris ? a.teksInggris : a.teksIndonesia || "";

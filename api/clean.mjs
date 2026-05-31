@@ -32,10 +32,22 @@ export default async function handler(req, res) {
     for (const surah of data.surahs) {
       for (const ayat of surah.ayat) {
         const original = ayat.teksArab;
-        let cleanedText = ayat.teksArab.replace(stripRegex, ' ').replace(/\s{2,}/g, ' ').trim();
+        let cleanedText = ayat.teksArab.replace(stripRegex, '').replace(/\s{2,}/g, ' ').trim();
         if (cleanedText !== original) {
           ayat.teksArab = cleanedText;
           cleaned++;
+        }
+      }
+    }
+
+    // Normalize spaces across all ayats (from char removals)
+    let spaceNormalized = 0;
+    for (const surah of data.surahs) {
+      for (const ayat of surah.ayat) {
+        const normalized = ayat.teksArab.replace(/\s{2,}/g, ' ').trim();
+        if (normalized !== ayat.teksArab) {
+          ayat.teksArab = normalized;
+          spaceNormalized++;
         }
       }
     }

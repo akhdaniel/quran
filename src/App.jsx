@@ -153,6 +153,21 @@ function App() {
   const [audioPlaying, setAudioPlaying] = useState(null);
   const audioRef = useRef(new Audio());
   const [showAyatDropdown, setShowAyatDropdown] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const qariList = [
+    { id: "01", name: "Abdullah Al-Juhany" },
+    { id: "02", name: "Abdul Muhsin Al-Qasim" },
+    { id: "03", name: "Abdurrahman As-Sudais" },
+    { id: "04", name: "Ibrahim Al-Dossari" },
+    { id: "05", name: "Misyari Rasyid Al-Afasi" },
+    { id: "06", name: "Yasser Al-Dosari" },
+  ];
+  const [selectedQari, setSelectedQari] = useState(() => {
+    return localStorage.getItem("quran-qari") || "05";
+  });
+  useEffect(() => {
+    localStorage.setItem("quran-qari", selectedQari);
+  }, [selectedQari]);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
@@ -529,7 +544,8 @@ function App() {
     const surahStr = String(surahNomor).padStart(3, "0");
     const ayatStr = String(currentAyat).padStart(3, "0");
     // Mishary Rashid Al-Afasy reciter
-    const audioUrl = "https://cdn.equran.id/audio-partial/Misyari-Rasyid-Al-Afasi/" + surahStr + ayatStr + ".mp3";
+    const qariName = qariList.find(function(q) { return q.id === selectedQari; })?.name || qariList[0].name;
+    const audioUrl = "https://cdn.equran.id/audio-partial/" + qariName + "/" + surahStr + ayatStr + ".mp3";
     
     audioRef.current.src = audioUrl;
     audioRef.current.play();
@@ -539,7 +555,7 @@ function App() {
     audioRef.current.onerror = () => {
       setAudioPlaying(null);
       // Fallback to another reciter
-      audioRef.current.src = "https://cdn.equran.id/audio-partial/Abdullah-Al-Juhany/" + surahStr + ayatStr + ".mp3";
+      audioRef.current.src = "https://cdn.equran.id/audio-partial/" + qariList[0].name + "/" + surahStr + ayatStr + ".mp3";
       audioRef.current.play().catch(() => setAudioPlaying(null));
     };
   };

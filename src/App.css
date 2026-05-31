@@ -424,6 +424,55 @@ body {
   opacity: 0.9;
 }
 
+/* Ayat toolbar: play, number, share in one row */
+.ayat-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 20px;
+}
+
+.ayat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-gold, #eab308);
+  background: transparent;
+  color: var(--accent-gold, #eab308);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.ayat-btn:hover {
+  background: var(--accent-gold, #eab308);
+  color: var(--text-inverse, #0f172a);
+}
+
+.num-btn {
+  background: var(--accent-gold);
+  color: var(--text-inverse);
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: default;
+  border: 2px solid var(--accent-gold);
+}
+
+.num-btn:hover {
+  background: var(--accent-gold);
+  color: var(--text-inverse);
+}
+
+.share-btn svg {
+  width: 16px;
+  height: 16px;
+}
 /* Ayat Card */
 .ayat-card {
   position: relative;
@@ -446,78 +495,10 @@ body {
   }
 }
 
-.ayat-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: auto;
-  margin: 0 auto 20px;
-}
-
-.play-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid var(--accent-gold, #eab308);
-  background: transparent;
-  color: var(--accent-gold, #eab308);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  padding: 0;
-  line-height: 1;
-}
-
-.play-btn:hover {
-  background: var(--accent-gold, #eab308);
-  color: var(--text-inverse, #0f172a);
-}
-
-.ayat-num-text {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--accent-gold);
-  color: var(--text-inverse);
-  font-weight: 700;
-  font-size: 0.85rem;
-}
 
 
-/* Share Button */
-.share-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: var(--bg-elevated, #1e293b);
-  border: 1px solid var(--border-primary, #334155);
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 8px;
-  transition: all 0.2s;
-  color: var(--text-muted, #94a3b8);
-  opacity: 0.8;
-  z-index: 2;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 
-.share-btn:hover {
-  background: var(--bg-hover, #334155);
-  color: var(--text-primary, #e2e8f0);
-  border-color: var(--accent-blue, #3b82f6);
-  opacity: 1;
-}
+
 
 .ayat-arabic {
   text-align: center;
@@ -1398,30 +1379,4 @@ body {
 }
 
 
-/* Share Button */
-.share-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: var(--bg-elevated, #1e293b);
-  border: 1px solid var(--border-primary, #334155);
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 8px;
-  transition: all 0.2s;
-  color: var(--text-muted, #94a3b8);
-  opacity: 0.8;
-  z-index: 2;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 
-.share-btn:hover {
-  background: var(--bg-hover, #334155);
-  color: var(--text-primary, #e2e8f0);
-  border-color: var(--accent-blue, #3b82f6);
-  opacity: 1;
-}

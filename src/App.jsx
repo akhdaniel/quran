@@ -911,25 +911,21 @@ function App() {
           className="ayat-card"
           key={`${currentSurah?.nomor}-${currentAyat}`}
         >
-          <div className="ayat-number">
-            <button className="play-btn" onClick={handlePlay} title={lang === "id" ? "Putar audio" : "Play audio"}>
+          <div className="ayat-toolbar">
+            <button className="ayat-btn play-btn" onClick={handlePlay} title={lang === "id" ? "Putar audio" : "Play audio"}>
               {audioPlaying === currentAyat ? "⏸" : "▶"}
             </button>
-            <span className="ayat-num-text">{ayat.nomor || currentAyat}</span>
+            <span className="ayat-btn num-btn">{ayat.nomor || currentAyat}</span>
+            <button className="ayat-btn share-btn" onClick={() => handleShare()} title={lang === "id" ? "Bagikan" : "Share"}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
           </div>
-          <button
-            className="share-btn"
-            onClick={() => handleShare()}
-            title={lang === "id" ? "Bagikan" : "Share"}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign:"middle"}}>
-  <circle cx="18" cy="5" r="3"/>
-  <circle cx="6" cy="12" r="3"/>
-  <circle cx="18" cy="19" r="3"/>
-  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-</svg>
-          </button>
           <div className="ayat-arabic">
             {ayatWords.map((w, i) => (
               <span

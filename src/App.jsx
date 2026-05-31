@@ -106,6 +106,20 @@ function App() {
     localStorage.setItem("quran-lang", lang);
   }, [lang]);
 
+  // ─── Theme (dark/light) ─────────────────────────────────
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("quran-theme") || "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("quran-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
+  };
+
   const t = useCallback(
     (key, params) => {
       let val = translations[lang]?.[key];
@@ -629,6 +643,13 @@ function App() {
       {/* Header */}
       <header className="header">
         <h1 className="title">{t("title")}</h1>
+        <button
+          className="lang-toggle"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Ganti ke dark mode"}
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
         <button
           className="lang-toggle"
           onClick={toggleLang}

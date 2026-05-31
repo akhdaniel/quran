@@ -171,11 +171,9 @@ export default async function handler(req, res) {
 
       if (!aiRes.ok) {
         const err = await aiRes.text().catch(() => "");
-        results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "error", error: err.slice(0,100) });
-        // Update progress even on error to avoid getting stuck
-        progress.current++;
-        await saveProgress(progress);
-        await new Promise(r => setTimeout(r, 500));
+        results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "error", error: err.slice(0,200) });
+        // Don't advance progress on error — will retry on next call
+        await new Promise(r => setTimeout(r, 3000));
         continue;
       }
 
@@ -193,6 +191,7 @@ export default async function handler(req, res) {
         results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "save_error", error: e.message });
       }
 
+      // Only advance progress on success
       progress.current++;
       await saveProgress(progress);
       await new Promise(r => setTimeout(r, 1000)); // delay antar request

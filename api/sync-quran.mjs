@@ -39,17 +39,25 @@ export default async function handler(req, res) {
       const surahDetail = detailData.data;
       const ayats = surahDetail.ayat || [];
 
-      // Ambil English translation dari alquran.cloud
+      // Ambil English translation dari alquran.cloud (retry 3x)
       let enAyats = [];
-      try {
-        const enRes = await fetch(`https://api.alquran.cloud/v1/surah/${s.nomor}/en.sahih`);
-        const enData = await enRes.json();
-        if (enData.code === 200 && enData.data?.ayahs) {
-          enAyats = enData.data.ayahs;
+      for (let retry = 0; retry < 3; retry++) {
+        try {
+          const enRes = await fetch(`https://api.alquran.cloud/v1/surah/${s.nomor}/en.sahih`);
+          const enData = await enRes.json();
+          if (enData.code === 200 && enData.data?.ayahs && enData.data.ayahs.length > 0) {
+            enAyats = enData.data.ayahs;
+            break;
+          }
+        } catch (e) {
+          console.warn(`alquran.cloud for surah ${s.nomor} attempt ${retry + 1} failed: ${e.message}`);
         }
-      } catch (e) {
-        console.warn(`alquran.cloud for surah ${s.nomor} failed: ${e.message}`);
+        // Wait before retry (500ms, 1s, 2s)
+        await new Promise(r => setTimeout(r, 500 * Math.pow(2, retry)));
       }
+
+      // Delay antar surah biar gak kena rate limit
+      await new Promise(r => setTimeout(r, 500));
 
       // Gabung data
       const mergedAyat = ayats.map((ayat, idx) => ({

@@ -1,6 +1,20 @@
 // POST /api/sync-quran — fetch all Quran data (ID + EN), save to Vercel Blob
 import { put } from "@vercel/blob";
 
+// Batch helper: process items with concurrency limit
+async function batchFetch(items, fn, concurrency) {
+  const results = [];
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency);
+    const batchResults = await Promise.allSettled(batch.map(fn));
+    results.push(...batchResults.map(r => r.status === "fulfilled" ? r.value : null));
+    if (i + concurrency < items.length) {
+      await new Promise(r => setTimeout(r, 800));
+    }
+  }
+  return results;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -14,58 +28,57 @@ export default async function handler(req, res) {
 
   try {
     // 1. Fetch daftar surat dari equran.id
-    console.log("Fetching surah list from equran.id...");
+    console.log("Fetching surah list...");
     const suratRes = await fetch("https://equran.id/api/v2/surat");
     const suratData = await suratRes.json();
     if (suratData.code !== 200) throw new Error("equran.id surat API failed");
-
     const surahList = suratData.data;
-    const total = surahList.length;
+    console.log(`Found ${surahList.length} surahs`);
+
+    // 2. Fetch detail per surat (Arab + ID) in batches of 5
+    console.log("Fetching surah details (Arab + ID)...");
+    const detailResults = await batchFetch(
+      surahList,
+      async (s) => {
+        const r = await fetch(`https://equran.id/api/v2/surat/${s.nomor}`);
+        const d = await r.json();
+        return d.code === 200 ? d.data : null;
+      },
+      5
+    );
+
+    // 3. Fetch English translations (alquran.cloud) in batches of 5
+    console.log("Fetching English translations...");
+    const enResults = await batchFetch(
+      surahList,
+      async (s) => {
+        const r = await fetch(`https://api.alquran.cloud/v1/surah/${s.nomor}/en.sahih`);
+        const d = await r.json();
+        return d.code === 200 && d.data?.ayahs ? d.data.ayahs : null;
+      },
+      5
+    );
+
+    // 4. Merge data
+    console.log("Merging data...");
     const result = [];
-
-    // 2. Loop per surat, fetch detail (Arab + ID translation) + EN translation
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < surahList.length; i++) {
       const s = surahList[i];
-      console.log(`Fetching surah ${s.nomor}/${total} (${s.namaLatin})...`);
+      const surahDetail = detailResults[i];
+      const enAyats = enResults[i];
 
-      // Ambil detail dari equran.id (Arab + Indonesia)
-      const detailRes = await fetch(`https://equran.id/api/v2/surat/${s.nomor}`);
-      const detailData = await detailRes.json();
-      if (detailData.code !== 200) {
-        console.warn(`equran.id detail for surah ${s.nomor} failed, skipping`);
+      if (!surahDetail) {
+        console.warn(`Skipping surah ${s.nomor} - no detail data`);
         continue;
       }
 
-      const surahDetail = detailData.data;
       const ayats = surahDetail.ayat || [];
-
-      // Ambil English translation dari alquran.cloud (retry 3x)
-      let enAyats = [];
-      for (let retry = 0; retry < 3; retry++) {
-        try {
-          const enRes = await fetch(`https://api.alquran.cloud/v1/surah/${s.nomor}/en.sahih`);
-          const enData = await enRes.json();
-          if (enData.code === 200 && enData.data?.ayahs && enData.data.ayahs.length > 0) {
-            enAyats = enData.data.ayahs;
-            break;
-          }
-        } catch (e) {
-          console.warn(`alquran.cloud for surah ${s.nomor} attempt ${retry + 1} failed: ${e.message}`);
-        }
-        // Wait before retry (500ms, 1s, 2s)
-        await new Promise(r => setTimeout(r, 500 * Math.pow(2, retry)));
-      }
-
-      // Delay antar surah biar gak kena rate limit
-      await new Promise(r => setTimeout(r, 500));
-
-      // Gabung data
       const mergedAyat = ayats.map((ayat, idx) => ({
         nomor: ayat.nomor || idx + 1,
         teksArab: ayat.teksArab || "",
         teksIndonesia: ayat.teksIndonesia || "",
         teksLatin: ayat.teksLatin || "",
-        teksInggris: enAyats[idx]?.text || "",
+        teksInggris: enAyats && enAyats[idx] ? enAyats[idx].text || "" : "",
       }));
 
       result.push({
@@ -79,8 +92,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Simpan ke Vercel Blob
-    console.log("Saving to Vercel Blob...");
+    // 5. Simpan ke Vercel Blob
+    console.log("Saving to Blob...");
     const blobData = {
       source: "equran.id + alquran.cloud",
       syncedAt: new Date().toISOString(),
@@ -99,9 +112,9 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       url: blobRes.url,
-      downloadUrl: blobRes.downloadUrl,
       totalSurahs: blobData.totalSurahs,
       totalAyats: blobData.totalAyats,
+      enComplete: result.every(s => s.ayat.every(a => a.teksInggris)),
     });
   } catch (err) {
     console.error("sync-quran error:", err);

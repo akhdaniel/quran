@@ -653,6 +653,44 @@ function App() {
     setChatMessages([]);
   };
 
+  // Load shared chats from server
+  const loadServerChats = useCallback(async () => {
+    if (!surahNomor || !currentAyat) return [];
+    try {
+      const r = await fetch(API_BASE + "/api/chats?surah=" + surahNomor + "&ayat=" + currentAyat);
+      const data = await r.json();
+      if (data.ok && data.messages) {
+        return data.messages;
+      }
+    } catch {}
+    return [];
+  }, [surahNomor, currentAyat]);
+
+  // Load server chats when history changes
+  useEffect(() => {
+    if (!analysis) return;
+    loadServerChats().then(function(msgs) {
+      if (msgs.length > 0) {
+        setChatMessages(msgs);
+      }
+    });
+  }, [surahNomor, currentAyat, lang]);
+
+  // Save a message to server
+  async function saveChatToServer(surah, ayat, content, role) {
+    if (!authToken) return;
+    try {
+      await fetch(API_BASE + "/api/chats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + authToken,
+        },
+        body: JSON.stringify({ surah, ayat, content, role }),
+      });
+    } catch {}
+  }
+
   const sendChat = async () => {
     const msg = chatInput.trim();
     if (!msg || chatSending) return;
@@ -669,6 +707,9 @@ function App() {
     setChatMessages(updated);
     setChatInput("");
     setChatSending(true);
+
+    // Save user message to server
+    saveChatToServer(surahNomor, currentAyat, msg, "user");
 
     try {
       const analysisSnippet = analysis?.substring(0, 4000) || t("chatSystemPrefixNoAnalysis");
@@ -700,6 +741,9 @@ function App() {
 
       const finalMessages = [...updated, { role: "assistant", content: reply }];
       setChatMessages(finalMessages);
+
+      // Save AI response to server
+      saveChatToServer(surahNomor, currentAyat, reply, "assistant");
 
       // Simpan chat ke localStorage
       const chatKey = `chat-${surahNomor}-${currentAyat}-${lang || "id"}`;
@@ -1126,7 +1170,7 @@ function App() {
                     className={`chat-bubble ${m.role === "user" ? "chat-user" : "chat-ai"}`}
                   >
                     <div className="chat-label">
-                      {m.role === "user" ? t("chatLabelUser") : t("chatLabelAI")}
+                      {m.email ? (m.role === "assistant" ? t("chatLabelAI") : m.email.split("@")[0]) : (m.role === "user" ? t("chatLabelUser") : t("chatLabelAI"))}
                     </div>
                     <Markdown
                       components={MarkdownComponents}

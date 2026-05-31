@@ -861,16 +861,14 @@ ${translation}`,
           className="ayat-card"
           key={`${currentSurah?.nomor}-${currentAyat}`}
         >
-          <div className="ayat-number">
-            {ayat.nomor || currentAyat}
-            <button
-              className="share-btn"
-              onClick={() => handleShare()}
-              title={lang === "id" ? "Bagikan" : "Share"}
-            >
-              📤
-            </button>
-          </div>
+          <div className="ayat-number">{ayat.nomor || currentAyat}</div>
+          <button
+            className="share-btn"
+            onClick={() => handleShare()}
+            title={lang === "id" ? "Bagikan" : "Share"}
+          >
+            📤
+          </button>
           <div className="ayat-arabic">
             {ayatWords.map((w, i) => (
               <span

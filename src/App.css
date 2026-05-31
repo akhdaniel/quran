@@ -1322,6 +1322,14 @@ body {
   }
 }
 
+.build-info {
+  font-size: 0.65rem;
+  color: var(--text-muted-3, #475569);
+  text-align: center;
+  margin-top: 4px;
+  opacity: 0.6;
+}
+
 /* Footer */
 .footer {
   text-align: center;

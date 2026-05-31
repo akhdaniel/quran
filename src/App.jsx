@@ -1109,6 +1109,9 @@ function App() {
             {t("footerHandle")}
           </a>
         </p>
+        <p className="build-info">
+          Build {typeof __BUILD_HASH__ !== "undefined" ? __BUILD_HASH__ : "-"} | {typeof __BUILD_DATE__ !== "undefined" ? __BUILD_DATE__ : "-"}
+        </p>
       </footer>
 
       {/* API Key Modal */}

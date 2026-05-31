@@ -12,7 +12,7 @@ const PREFIX = "analysis/";
 // ID Prompt (clean, no JSON)
 const PROMPT_ID = `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia. Langsung ke analisis, tanpa pendahuluan atau penutup.
 
-**Ayat:**
+{surahInfo}**Ayat:**
 {arab}
 
 **Terjemahan:**
@@ -29,7 +29,7 @@ const PROMPT_ID = `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstr
 // EN Prompt
 const PROMPT_EN = `Analyze the following Qur'anic verse deeply and in a structured manner in English. Get straight to the analysis, no introduction or closing.
 
-**Verse:**
+{surahInfo}**Verse:**
 {arab}
 
 **Translation:**

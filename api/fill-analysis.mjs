@@ -6,7 +6,7 @@ const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
 const PROGRESS_KEY = "analysis/progress.json";
-const BATCH = 5; // 5 ayat per panggilan
+const BATCH = 3; // 5 ayat per panggilan
 const PREFIX = "analysis/";
 
 // ID Prompt (clean, no JSON)
@@ -164,7 +164,7 @@ export default async function handler(req, res) {
             },
             { role: "user", content: task.prompt },
           ],
-          max_tokens: 8192,
+          max_tokens: 4000,
           temperature: 0.3,
         }),
       });

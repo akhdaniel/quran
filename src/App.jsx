@@ -155,12 +155,12 @@ function App() {
   const [showAyatDropdown, setShowAyatDropdown] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const qariList = [
-    { id: "01", name: "Abdullah Al-Juhany" },
-    { id: "02", name: "Abdul Muhsin Al-Qasim" },
-    { id: "03", name: "Abdurrahman As-Sudais" },
-    { id: "04", name: "Ibrahim Al-Dossari" },
-    { id: "05", name: "Misyari Rasyid Al-Afasi" },
-    { id: "06", name: "Yasser Al-Dosari" },
+    { id: "01", name: "Abdullah-Al-Juhany" },
+    { id: "02", name: "Abdul-Muhsin-Al-Qasim" },
+    { id: "03", name: "Abdurrahman-as-Sudais" },
+    { id: "04", name: "Ibrahim-Al-Dossari" },
+    { id: "05", name: "Misyari-Rasyid-Al-Afasi" },
+    { id: "06", name: "Yasser-Al-Dosari" },
   ];
   const [selectedQari, setSelectedQari] = useState(() => {
     return localStorage.getItem("quran-qari") || "05";
@@ -809,7 +809,7 @@ function App() {
                       checked={selectedQari === q.id}
                       onChange={function() { setSelectedQari(q.id); }}
                     />
-                    <span>{q.name}</span>
+                    <span>{q.name.replace(/-/g, " ")}</span>
                   </label>
                 );
               })}

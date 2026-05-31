@@ -784,8 +784,7 @@ function App() {
             {ayatWords.map((w, i) => (
               <span
                 key={i}
-                className={`ayat-word ${i < wordEntries.length ? "clickable" : ""}`}
-                onClick={() => i < wordEntries.length && scrollToWord(i)}
+                className="ayat-word"
               >
                 {w}{" "}
               </span>
@@ -834,39 +833,14 @@ function App() {
                   </button>
                 </div>
               </div>
-              {/* Word-by-word nav — pakai ayatWords langsung kalo gak ada parsed entries */}
-              {(wordEntries.length > 0 || ayatWords.length > 1) && (
-                <div className="word-nav-section">
-                  <div className="word-nav-title">📖 {t("wordNavTitle")}</div>
-                  <div className="word-nav-list">
-                    {(wordEntries.length > 0 ? wordEntries : ayatWords.map((w, i) => ({ arabic: w }))).map((entry, i) => (
-                      <div
-                        key={i}
-                        ref={(el) => { wordRefs.current[i] = el; }}
-                        className="word-nav-item"
-                        onClick={() => scrollToWord(i)}
-                      >
-                        <span className="word-nav-arabic">{entry.arabic}</span>
-                        {entry.original && (
-                          <>
-                            <span className="word-nav-arrow">→</span>
-                            <span className="word-nav-meaning">
-                              {(() => { const m = entry.original.match(/\*\*[^\*]+\*\*\s*[—–-]?\s*(.*)/); return m ? m[1].trim() : ""; })()}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+
 
               <div className="analysis-body">
                 <Markdown
                   components={MarkdownComponents}
                   remarkPlugins={[remarkGfm]}
                 >
-                  {analysis?.replace(/\*\*(Terjemahan Kata Per Kata|Word-by-Word Translation)\*\*[\s\S]*?(?=\*\*(Bentukan|Word Formation)|$)/, "")}
+                  {analysis}
                 </Markdown>
               </div>
 

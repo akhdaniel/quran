@@ -833,12 +833,9 @@ function App() {
             onChange={(e) => setCurrentAyat(Number(e.target.value))}
           >
             {verses.map((v, i) => {
-              const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
-              const first = words[0] || "";
-              const last = words.length > 1 ? words[words.length - 1] : "";
               return (
                 <option key={i} value={i + 1}>
-                  {i + 1}. {first}{last ? " ... " + last : ""}
+                  {i + 1}
                 </option>
               );
             })}
@@ -1026,12 +1023,9 @@ function App() {
             onChange={(e) => setCurrentAyat(Number(e.target.value))}
           >
             {verses.map((v, i) => {
-              const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
-              const first = words[0] || "";
-              const last = words.length > 1 ? words[words.length - 1] : "";
               return (
                 <option key={i} value={i + 1}>
-                  {i + 1}. {first}{last ? " ... " + last : ""}
+                  {i + 1}
                 </option>
               );
             })}

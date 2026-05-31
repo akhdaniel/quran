@@ -150,6 +150,8 @@ function App() {
   const [keyInput, setKeyInput] = useState("");
   const [surahSearch, setSurahSearch] = useState("");
   const [showSurahDropdown, setShowSurahDropdown] = useState(false);
+  const [audioPlaying, setAudioPlaying] = useState(null);
+  const audioRef = useRef(new Audio());
   const [showAyatDropdown, setShowAyatDropdown] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -515,6 +517,33 @@ function App() {
       }
     }
   };
+  const handlePlay = () => {
+    if (!ayat?.teksArab) return;
+    
+    // Stop current
+    if (audioPlaying) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    const surahStr = String(surahNomor).padStart(3, "0");
+    const ayatStr = String(currentAyat).padStart(3, "0");
+    // Mishary Rashid Al-Afasy reciter
+    const audioUrl = "https://cdn.equran.id/audio-partial/Misyari-Rasyid-Al-Afasi/" + surahStr + ayatStr + ".mp3";
+    
+    audioRef.current.src = audioUrl;
+    audioRef.current.play();
+    setAudioPlaying(currentAyat);
+    
+    audioRef.current.onended = () => setAudioPlaying(null);
+    audioRef.current.onerror = () => {
+      setAudioPlaying(null);
+      // Fallback to another reciter
+      audioRef.current.src = "https://cdn.equran.id/audio-partial/Abdullah-Al-Juhany/" + surahStr + ayatStr + ".mp3";
+      audioRef.current.play().catch(() => setAudioPlaying(null));
+    };
+  };
+
   const clearAnalysis = () => {
     const suffix = lang || "id";
     const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}-${suffix}`;
@@ -882,7 +911,12 @@ function App() {
           className="ayat-card"
           key={`${currentSurah?.nomor}-${currentAyat}`}
         >
-          <div className="ayat-number">{ayat.nomor || currentAyat}</div>
+          <div className="ayat-number">
+            <button className="play-btn" onClick={handlePlay} title={lang === "id" ? "Putar audio" : "Play audio"}>
+              {audioPlaying === currentAyat ? "⏸" : "▶"}
+            </button>
+            {ayat.nomor || currentAyat}
+          </div>
           <button
             className="share-btn"
             onClick={() => handleShare()}

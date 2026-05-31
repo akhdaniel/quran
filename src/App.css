@@ -450,14 +450,44 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  width: auto;
+  margin: 0 auto 20px;
+}
+
+.play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-gold, #eab308);
+  background: transparent;
+  color: var(--accent-gold, #eab308);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.play-btn:hover {
+  background: var(--accent-gold, #eab308);
+  color: var(--text-inverse, #0f172a);
+}
+
+.ayat-num-text {
   width: 40px;
   height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   background: var(--accent-gold);
   color: var(--text-inverse);
   font-weight: 700;
   font-size: 0.85rem;
-  margin: 0 auto 20px;
 }
 
 

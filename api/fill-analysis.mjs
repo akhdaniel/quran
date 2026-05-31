@@ -20,7 +20,7 @@ const PROMPT_ID = `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstr
 
 {latinSegment}Berikan analisis dengan format berikut (gunakan markdown sederhana):
 
-1. **Terjemahan Kata Per Kata** — tiap kata: - **kata** — artinya
+1. **Terjemahan Kata Per Kata** — tiap kata: - **tulis kata dalam huruf Arab** — artinya
 2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci, beserta arti/konsep dari kata dasar tersebut
 3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata
 4. **Tafsir Singkat** — penjelasan singkat makna ayat berdasarkan tafsir klasik (seperti Ibnu Katsir, al-Mishbah, dll)`;
@@ -36,7 +36,7 @@ const PROMPT_EN = `Analyze the following Qur'anic verse deeply and in a structur
 
 {latinSegment}Provide analysis in the following format (use simple markdown):
 
-1. **Word-by-Word Translation** — each word: - **word** — meaning
+1. **Word-by-Word Translation** — each word: - **write the word in Arabic script** — meaning
 2. **Word Formation (Sarf/Morphology)** — analysis of root word forms (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, etc.) for key words, with the meaning/concept of each root word
 3. **Balaghah (Rhetoric)** — analysis of rhetorical devices and linguistic beauty: uslub (style), kinayah/majaz (metaphor), fashahah (eloquence), unique word arrangement
 4. **Brief Tafsir** — concise explanation of the verse's meaning based on classical tafsir (such as Ibn Kathir, al-Mishbah, etc.)`;

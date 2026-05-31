@@ -1,6 +1,6 @@
 // /api/chats — GET shared chats for an ayat, POST new message
 import { put, get } from "@vercel/blob";
-import { verifyJWT } from "../_auth.mjs";
+import { verifyJWT } from "./_auth.mjs";
 
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const PREFIX = "chats/";

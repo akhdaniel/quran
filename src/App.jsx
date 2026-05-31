@@ -50,8 +50,7 @@ const translations = {
     systemPrompt:
       "Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab seputar ayat yang diberikan, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Jawab langsung tanpa pendahuluan atau penutup. Gunakan Bahasa Indonesia yang baik dan santai namun ilmiah.",
     analysisPrompt:
-      "Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia. Langsung ke analisis, tanpa pendahuluan atau penutup.{surahInfo}**Ayat:**\n{arab}\n\n**Terjemahan:**\n{translation}\n\n{latinSegment}Berikan analisis dengan format berikut (gunakan markdown sederhana):\n\n1. **Terjemahan Kata Per Kata** — tiap kata: - **tulis kata dalam huruf Arab** — artinya\n2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci, beserta arti/konsep dari kata dasar tersebut\n3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata\n4. **Tafsir Singkat** — penjelasan singkat makna ayat, minimal dari 3 sumber tafsir berikut: Ibnu Katsir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurthubi, Ath-Thabari, Sayyid Qutb
-5. **Asbabun Nuzul** — sebab-sebab turunnya ayat ini (riwayat yang shahih), jika ada. Jika tidak ada riwayat khusus, sebutkan bahwa ayat ini diturunkan tanpa sebab khusus (ghairu sababin nuzul) dan tetap berikan konteks historisnya",
+      "Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia. Langsung ke analisis, tanpa pendahuluan atau penutup.{surahInfo}**Ayat:**\n{arab}\n\n**Terjemahan:**\n{translation}\n\n{latinSegment}Berikan analisis dengan format berikut (gunakan markdown sederhana):\n\n1. **Terjemahan Kata Per Kata** — tiap kata: - **tulis kata dalam huruf Arab** — artinya\n2. **Bentukan Kata (Sarf/Morfologi)** — analisis bentuk kata dasar (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, dll) untuk kata-kata kunci, beserta arti/konsep dari kata dasar tersebut\n3. **Balaghah** — analisis retorika dan keindahan bahasa: uslub (gaya bahasa), kinayah/majaz, fashahah, keunikan susunan kata\n4. **Tafsir Singkat** — penjelasan singkat makna ayat, minimal dari 3 sumber tafsir berikut: Ibnu Katsir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurthubi, Ath-Thabari, Sayyid Qutb\n5. **Asbabun Nuzul** — sebab-sebab turunnya ayat ini (riwayat yang shahih), jika ada. Jika tidak ada riwayat khusus, sebutkan bahwa ayat ini diturunkan tanpa sebab khusus (ghairu sababin nuzul) dan tetap berikan konteks historisnya",
     chatSystemPrefix: "Kamu adalah asisten ahli tafsir Al-Qur'an yang hanya menjawab pertanyaan seputar ayat yang sedang dibahas, ilmu nahwu, sharaf, balaghah, dan tafsir Al-Qur'an. Berikut adalah analisa ayat yang sudah dibuat:\n\n{analysis}\n\nJawab langsung tanpa pendahuluan atau penutup. Berikan detail dan ilmiah dalam Bahasa Indonesia.\n\nJika user bertanya tentang contoh penggunaan kata atau struktur nahwu dari ayat yang sedang dibahas, berikan penjelasan dan contoh penggunaannya dalam konteks lain. Jika benar-benar di luar topik tafsir Al-Qur'an dan bahasa Arab secara umum, tolak dengan sopan dan ajak kembali ke ayat yang sedang dibahas.",
     bismillah: "Bismillah",
   },
@@ -89,8 +88,7 @@ const translations = {
     systemPrompt:
       "You are an expert Qur'anic tafsir assistant. Only answer questions related to the given verse, nahw, sarf, balaghah, and Qur'anic tafsir. Answer directly without preamble or closing. Use clear, academic yet approachable English.",
     analysisPrompt:
-      "Analyze the following Qur'anic verse deeply and in a structured manner in English. Get straight to the analysis, no introduction or closing.{surahInfo}**Verse:**\n{arab}\n\n**Translation:**\n{translation}\n\n{latinSegment}Provide analysis in the following format (use simple markdown):\n\n1. **Word-by-Word Translation** — each word: - **write the word in Arabic script** — meaning\n2. **Word Formation (Sarf/Morphology)** — analysis of root word forms (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, etc.) for key words, with the meaning/concept of each root word\n3. **Balaghah (Rhetoric)** — analysis of rhetorical devices and linguistic beauty: uslub (style), kinayah/majaz (metaphor), fashahah (eloquence), unique word arrangement\n4. **Brief Tafsir** — concise explanation from at least 3 of these tafsir sources: Ibn Kathir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurtubi, At-Tabari, Sayyid Qutb
-5. **Asbabun Nuzul (Occasion of Revelation)** — the authentic reasons/context for this verse's revelation, if known. If no specific narration exists, state that the verse was revealed without a specific occasion (ghairu sababin nuzul) and still provide its historical context",
+      "Analyze the following Qur'anic verse deeply and in a structured manner in English. Get straight to the analysis, no introduction or closing.{surahInfo}**Verse:**\n{arab}\n\n**Translation:**\n{translation}\n\n{latinSegment}Provide analysis in the following format (use simple markdown):\n\n1. **Word-by-Word Translation** — each word: - **write the word in Arabic script** — meaning\n2. **Word Formation (Sarf/Morphology)** — analysis of root word forms (fi'il madhi/mudhari/amar, isim masdar, isim fa'il/maf'ul, etc.) for key words, with the meaning/concept of each root word\n3. **Balaghah (Rhetoric)** — analysis of rhetorical devices and linguistic beauty: uslub (style), kinayah/majaz (metaphor), fashahah (eloquence), unique word arrangement\n4. **Brief Tafsir** — concise explanation from at least 3 of these tafsir sources: Ibn Kathir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurtubi, At-Tabari, Sayyid Qutb\n5. **Asbabun Nuzul (Occasion of Revelation)** — the authentic reasons/context for this verse's revelation, if known. If no specific narration exists, state that the verse was revealed without a specific occasion (ghairu sababin nuzul) and still provide its historical context",
     chatSystemPrefix: "You are an expert Qur'anic tafsir assistant. Only answer questions related to the verse being discussed, nahw, sarf, balaghah, and Qur'anic tafsir. Here is the existing analysis for the verse:\n\n{analysis}\n\nAnswer directly without preamble or closing. Be detailed and academic in English.\n\nIf the user asks about examples of word usage or nahw structures from the discussed verse, provide explanations and usage examples in other contexts. If genuinely outside Qur'anic tafsir and Arabic linguistics, politely decline and redirect to the verse being discussed.",
     bismillah: "In the name of Allah",
   },
@@ -174,6 +172,120 @@ function App() {
   useEffect(() => {
     localStorage.setItem("quran-qari", selectedQari);
   }, [selectedQari]);
+
+  // ─── Auth ──────────────────────────────────────────────
+  const API_BASE = "";
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem("quran-auth-token") || null);
+  const [authUser, setAuthUser] = useState(() => {
+    const stored = localStorage.getItem("quran-auth-user");
+    return stored ? JSON.parse(stored) : null;
+  });
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginSending, setLoginSending] = useState(false);
+  const [loginSent, setLoginSent] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // Save auth to localStorage
+  useEffect(() => {
+    if (authToken) {
+      localStorage.setItem("quran-auth-token", authToken);
+      localStorage.setItem("quran-auth-user", JSON.stringify(authUser));
+    } else {
+      localStorage.removeItem("quran-auth-token");
+      localStorage.removeItem("quran-auth-user");
+    }
+  }, [authToken, authUser]);
+
+  // Handle magic link from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const loginToken = params.get("login");
+    if (!loginToken) return;
+
+    // Clean URL
+    const clean = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, "", clean);
+
+    fetch(API_BASE + "/api/auth/verify?token=" + encodeURIComponent(loginToken))
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.token) {
+          setAuthToken(data.token);
+          setAuthUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Load prefs from server on login
+  useEffect(() => {
+    if (!authToken || !authUser) return;
+    fetch(API_BASE + "/api/user/prefs", {
+      headers: { Authorization: "Bearer " + authToken },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.preferences) {
+          const p = data.preferences;
+          if (p.qari) setSelectedQari(p.qari);
+          if (p.theme) setTheme(p.theme);
+        }
+      })
+      .catch(() => {});
+  }, [authToken]);
+
+  // Auto-save lastRead when ayat changes
+  useEffect(() => {
+    if (currentSurah && currentAyat && authToken) {
+      savePrefsToServer();
+    }
+  }, [currentSurah, currentAyat]);
+
+  function savePrefsToServer() {
+    if (!authToken) return;
+    const payload = {
+      qari: selectedQari,
+      theme: theme,
+      lastRead: { surah: currentSurah?.nomor || surahNomor, ayat: currentAyat },
+    };
+    fetch(API_BASE + "/api/user/prefs", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + authToken,
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  }
+
+  function handleLoginSend() {
+    if (!loginEmail.trim() || !loginEmail.includes("@")) return;
+    setLoginSending(true);
+    setLoginError("");
+    fetch(API_BASE + "/api/auth/send-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: loginEmail.trim() }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) {
+          setLoginSent(true);
+        } else {
+          setLoginError(data.error || "Failed to send");
+        }
+      })
+      .catch(() => setLoginError("Network error"))
+      .finally(() => setLoginSending(false));
+  }
+
+  function handleLogout() {
+    setAuthToken(null);
+    setAuthUser(null);
+    setShowLoginModal(false);
+  }
+
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
@@ -740,10 +852,10 @@ function App() {
         </button>
         <button
           className="settings-btn"
-          onClick={() => setShowSettings(!showSettings)}
-          title={lang === "id" ? "Pengaturan" : "Settings"}
+          onClick={() => authUser ? setShowSettings(!showSettings) : setShowLoginModal(true)}
+          title={authUser ? (lang === "id" ? "Pengaturan" : "Settings") : (lang === "id" ? "Masuk" : "Login")}
         >
-          ⚙
+          {authUser ? "⚙" : "🔑"}
         </button>
       </header>
 
@@ -751,6 +863,15 @@ function App() {
         <div className="settings-modal" onClick={() => setShowSettings(false)}>
           <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
             <div className="settings-title">{lang === "id" ? "Pengaturan" : "Settings"}</div>
+            {authUser && (
+              <div className="settings-section" style={{borderBottom:"1px solid #333",paddingBottom:"8px",marginBottom:"8px"}}>
+                <div style={{color:"#888",fontSize:"12px"}}>{lang === "id" ? "Masuk sebagai" : "Logged in as"}</div>
+                <div style={{color:"#c9a96e",fontSize:"14px",marginBottom:"8px"}}>{authUser.email}</div>
+                <button className="modal-cancel" onClick={handleLogout} style={{fontSize:"12px",padding:"4px 12px"}}>
+                  {lang === "id" ? "Keluar" : "Logout"}
+                </button>
+              </div>
+            )}
             <div className="settings-section">
               <div className="settings-label">{lang === "id" ? "Pilih Qori" : "Choose Reciter"}</div>
               {qariList.map(function(q) {
@@ -1155,6 +1276,50 @@ function App() {
                 {t("modalSave")}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="modal-overlay" onClick={() => { setShowLoginModal(false); setLoginSent(false); setLoginError(""); }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">{lang === "id" ? "Masuk ke Altanzeel" : "Login to Altanzeel"}</h3>
+            {!loginSent ? (
+              <>
+                <p className="modal-hint">{lang === "id"
+                  ? "Masukkan email Anda untuk menerima tautan masuk."
+                  : "Enter your email to receive a login link."}</p>
+                <input
+                  className="modal-input"
+                  type="email"
+                  placeholder={lang === "id" ? "Email Anda" : "Your email"}
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLoginSend()}
+                  autoFocus
+                />
+                {loginError && <p style={{ color: "#ef4444", fontSize: "13px", margin: "4px 0" }}>{loginError}</p>}
+                <div className="modal-actions">
+                  <button className="modal-cancel" onClick={() => { setShowLoginModal(false); setLoginError(""); }}>
+                    {lang === "id" ? "Batal" : "Cancel"}
+                  </button>
+                  <button className="modal-save" onClick={handleLoginSend} disabled={loginSending || !loginEmail.trim()}>
+                    {loginSending ? (lang === "id" ? "Mengirim..." : "Sending...") : (lang === "id" ? "Kirim Tautan" : "Send Link")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="modal-hint">{lang === "id"
+                  ? "Tautan masuk sudah dikirim ke email Anda. Cek inbox/spam."
+                  : "Login link sent to your email. Check inbox/spam."}</p>
+                <div className="modal-actions">
+                  <button className="modal-save" onClick={() => { setShowLoginModal(false); setLoginSent(false); setLoginEmail(""); }}>
+                    {lang === "id" ? "Tutup" : "Close"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

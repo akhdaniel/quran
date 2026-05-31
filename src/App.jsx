@@ -851,10 +851,7 @@ function App() {
                         setShowAyatDropdown(false);
                       }}
                     >
-                      <span className="jump-dd-nomor">{i + 1}</span>
-                      <span className="jump-dd-arab">
-                        {first}{last ? " ... " + last : ""}
-                      </span>
+                      {i + 1}. {first}{last ? " ... " + last : ""}
                     </div>
                   );
                 })}
@@ -1061,10 +1058,7 @@ function App() {
                         setShowAyatDropdown(false);
                       }}
                     >
-                      <span className="jump-dd-nomor">{i + 1}</span>
-                      <span className="jump-dd-arab">
-                        {first}{last ? " ... " + last : ""}
-                      </span>
+                      {i + 1}. {first}{last ? " ... " + last : ""}
                     </div>
                   );
                 })}

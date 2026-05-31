@@ -671,12 +671,13 @@ body {
 }
 
 .jump-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 8px 12px;
   cursor: pointer;
   transition: background 0.15s;
+  font-family: "Noto Naskh Arabic", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-primary, #e2e8f0);
+  white-space: nowrap;
 }
 
 .jump-dropdown-item:hover {
@@ -685,24 +686,6 @@ body {
 
 .jump-dropdown-item.active {
   background: var(--bg-active, rgba(59,130,246,0.13));
-}
-
-.jump-dd-nomor {
-  flex-shrink: 0;
-  width: 24px;
-  color: var(--text-muted-2, #64748b);
-  font-size: 0.78rem;
-  text-align: right;
-}
-
-.jump-dd-arab {
-  flex: 1;
-  font-family: "Noto Naskh Arabic", "Traditional Arabic", "Scheherazade New", "Amiri", serif;
-  font-size: 0.9rem;
-  color: var(--text-arabic, #f8fafc);
-  direction: rtl;
-  text-align: right;
-  line-height: 1.4;
 }
 
 .jump-select option {

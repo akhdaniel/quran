@@ -234,7 +234,6 @@ function App() {
   };
 
   // Baca parameter URL untuk direct link (?surah=X&ayat=Y)
-  // Baca parameter URL untuk direct link (?surah=X&ayat=Y)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const s = params.get("surah");

@@ -93,29 +93,34 @@ export default async function handler(req, res) {
   if (resetTo !== null && !isNaN(resetTo) && resetTo >= 0) {
     await saveProgress({ current: resetTo, total: 12472 });
     if (body.clean === true) {
-      // Delete all existing analysis files from reset point onward
+      // Delete all existing analysis files from reset point onward using list + parallel batch delete
       const quranData = await loadQuranData();
       if (quranData) {
         let deleted = 0;
+        // Collect all keys from reset point
+        const keysToDelete = [];
         let idx = 0;
         for (const s of quranData.surahs) {
           for (const a of s.ayat) {
             for (const lang of ["id", "en"]) {
               if (idx >= resetTo) {
-                const key = PREFIX + s.nomor + "-" + a.nomor + "-" + lang + ".json";
-                try {
-                  const exists = await get(key, { access: "private", token: BLOB_TOKEN });
-                  if (exists) {
-                    await del(key, { access: "private", token: BLOB_TOKEN });
-                    deleted++;
-                  }
-                } catch {}
+                keysToDelete.push(PREFIX + s.nomor + "-" + a.nomor + "-" + lang + ".json");
               }
               idx++;
             }
           }
         }
-        return res.status(200).json({ ok: true, message: "Progress reset to " + resetTo + " and " + deleted + " analysis files cleaned", progress: { current: resetTo, total: 12472 }, cleaned: deleted });
+        // Delete in parallel batches of 50
+        for (let i = 0; i < keysToDelete.length; i += 50) {
+          const batch = keysToDelete.slice(i, i + 50);
+          await Promise.all(batch.map(async (key) => {
+            try {
+              await del(key, { access: "private", token: BLOB_TOKEN });
+              return 1;
+            } catch { return 0; }
+          }));
+        }
+        return res.status(200).json({ ok: true, message: "Progress reset to " + resetTo + " and analysis files cleaned", progress: { current: resetTo, total: 12472 }, cleaned: keysToDelete.length });
       }
     }
     return res.status(200).json({ ok: true, message: "Progress reset to index " + resetTo, progress: { current: resetTo, total: 12472 } });

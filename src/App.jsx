@@ -233,6 +233,20 @@ function App() {
     }
   };
 
+  // Baca parameter URL untuk direct link (?surah=X&ayat=Y)
+  // Baca parameter URL untuk direct link (?surah=X&ayat=Y)
+  const urlParamsRef = useRef(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get("surah");
+    const a = params.get("ayat");
+    if (s && a) {
+      urlParamsRef.current = { surah: Number(s), ayat: Number(a) };
+      setSurahNomor(Number(s));
+      setCurrentAyat(Number(a));
+    }
+  }, []);
+
   // Fetch daftar surat
   useEffect(() => {
     fetch(`${API_BASE}/surat`)
@@ -240,9 +254,16 @@ function App() {
       .then((d) => {
         if (d.code === 200) {
           setSurahs(d.data);
-          const first = d.data[0];
-          setSurahNomor(first.nomor);
-          loadSurah(first.nomor);
+          if (urlParamsRef.current) {
+            const target = urlParamsRef.current;
+            loadSurah(target.surah);
+            setCurrentAyat(target.ayat);
+            urlParamsRef.current = null;
+          } else {
+            const first = d.data[0];
+            setSurahNomor(first.nomor);
+            loadSurah(first.nomor);
+          }
         }
       })
       .catch(console.error);
@@ -454,7 +475,7 @@ function App() {
     const ayatNumber = currentAyat || 1;
     const arabText = ayat?.teksArab || "";
     const translation = lang === "en" && ayat?.teksInggris ? ayat.teksInggris : ayat?.teksIndonesia || "";
-    const url = window.location.href.split("#")[0];
+    const url = window.location.origin + window.location.pathname + "?surah=" + surahNumber + "&ayat=" + ayatNumber;
     const detailLine = lang === "id"
       ? "Lihat detail analisa kata per kata, nahwu sharaf, balaghah dan tafsir, klik:"
       : "See detailed word-by-word analysis, nahwu sharaf, balaghah and tafsir, click:";

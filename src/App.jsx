@@ -493,7 +493,6 @@ function App() {
   };
 
   const handleShare = () => {
-  const handleShare = () => {
     const surahName = currentSurah?.namaLatin || "";
     const surahNumber = surahNomor || 1;
     const ayatNumber = currentAyat || 1;
@@ -524,6 +523,7 @@ function App() {
       }
     }
   };
+  const clearAnalysis = () => {
     const suffix = lang || "id";
     const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}-${suffix}`;
     localStorage.removeItem(cacheKey);

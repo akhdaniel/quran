@@ -94,6 +94,11 @@ const translations = {
   },
 };
 
+// Filter out Quranic annotation characters from display words
+function cleanWord(w) {
+  return w.replace(/[\u06D5-\u06ED\u08D0-\u08E1\u08E3-\u08FF\uFE70-\uFEFF\uFDF2-\uFDFD]/g, '').trim();
+}
+
 function App() {
   // ─── i18n ──────────────────────────────────────────────
   const [lang, setLang] = useState(() => {

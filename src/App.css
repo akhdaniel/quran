@@ -1285,6 +1285,32 @@ body {
   cursor: not-allowed;
 }
 
+.chat-login-prompt {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bg-input-alt);
+  border: 1px dashed var(--border-primary);
+  font-size: 0.85rem;
+  color: var(--text-muted-3);
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-login-link {
+  color: var(--accent-blue);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.chat-login-link:hover {
+  color: var(--accent-blue-hover);
+}
+
 @media (max-width: 480px) {
   .chat-user {
     margin-left: 8px;

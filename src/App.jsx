@@ -34,6 +34,8 @@ const translations = {
     chatTyping: "Mengetik...",
     chatPlaceholder: "Tanya detail analisa...",
     chatSend: "Kirim",
+    chatLoginPrompt: "Login dulu untuk bertanya lebih detail",
+    chatLoginLink: "Login",
     progressText: "Ayat {current} dari {total}",
     footerText:
       "Ada saran, pertanyaan, atau mau donasi? Silakan hubungi",
@@ -72,6 +74,8 @@ const translations = {
     chatTyping: "Typing...",
     chatPlaceholder: "Ask about the analysis...",
     chatSend: "Send",
+    chatLoginPrompt: "Login to ask more details",
+    chatLoginLink: "Login",
     progressText: "Verse {current} of {total}",
     footerText:
       "Suggestions, questions, or want to donate? Reach out at",
@@ -1138,28 +1142,41 @@ function App() {
                     <span>{t("chatTyping")}</span>
                   </div>
                 )}
-                <div className="chat-input-row">
-                  <input
-                    className="chat-input"
-                    placeholder={t("chatPlaceholder")}
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendChat();
-                      }
-                    }}
-                    disabled={chatSending}
-                  />
-                  <button
-                    className="chat-send-btn"
-                    onClick={sendChat}
-                    disabled={!chatInput.trim() || chatSending}
-                  >
-                    {t("chatSend")}
-                  </button>
-                </div>
+                {authUser ? (
+                  <div className="chat-input-row">
+                    <input
+                      className="chat-input"
+                      placeholder={t("chatPlaceholder")}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendChat();
+                        }
+                      }}
+                      disabled={chatSending}
+                    />
+                    <button
+                      className="chat-send-btn"
+                      onClick={sendChat}
+                      disabled={!chatInput.trim() || chatSending}
+                    >
+                      {t("chatSend")}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="chat-login-prompt">
+                    <span>{t("chatLoginPrompt")}</span>
+                    <a
+                      href="#"
+                      className="chat-login-link"
+                      onClick={(e) => { e.preventDefault(); setShowLoginModal(true); }}
+                    >
+                      {t("chatLoginLink")}
+                    </a>
+                  </div>
+                )}
                 <div ref={chatRef} />
               </div>
             </div>

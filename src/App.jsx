@@ -882,11 +882,12 @@ function App() {
           >
             {verses.map((v, i) => {
               const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
-              const first = words[0] || "";
-              const last = words.length > 1 ? words[words.length - 1] : "";
+              const cleanWords = words.filter(function(w) { return cleanWord(w).length > 0; });
+              const first = cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "";
+              const last = cleanWords.length > 1 ? cleanWord(cleanWords[cleanWords.length - 1]) : (cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "");
               return (
                 <option key={i} value={i + 1}>
-                  {i + 1}. {first}{last ? " ... " + last : ""}
+                  {i + 1}. {first}{last && last !== first ? " ... " + last : ""}
                 </option>
               );
             })}
@@ -1076,11 +1077,12 @@ function App() {
           >
             {verses.map((v, i) => {
               const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
-              const first = words[0] || "";
-              const last = words.length > 1 ? words[words.length - 1] : "";
+              const cleanWords = words.filter(function(w) { return cleanWord(w).length > 0; });
+              const first = cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "";
+              const last = cleanWords.length > 1 ? cleanWord(cleanWords[cleanWords.length - 1]) : (cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "");
               return (
                 <option key={i} value={i + 1}>
-                  {i + 1}. {first}{last ? " ... " + last : ""}
+                  {i + 1}. {first}{last && last !== first ? " ... " + last : ""}
                 </option>
               );
             })}

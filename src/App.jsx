@@ -235,38 +235,63 @@ function App() {
 
   // Baca parameter URL untuk direct link (?surah=X&ayat=Y)
   // Baca parameter URL untuk direct link (?surah=X&ayat=Y)
-  const urlParamsRef = useRef(null);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const s = params.get("surah");
     const a = params.get("ayat");
     if (s && a) {
-      urlParamsRef.current = { surah: Number(s), ayat: Number(a) };
-      setSurahNomor(Number(s));
-      setCurrentAyat(Number(a));
+      const targetSurah = Number(s);
+      const targetAyat = Number(a);
+      // Fetch the surah directly with the target number
+      const isEn = lang === "en";
+      Promise.all([
+        fetch(API_BASE + "/surat/" + targetSurah).then(function(r) { return r.json(); }),
+        isEn
+          ? fetch(ENGLISH_API + "/surah/" + targetSurah + "/en.sahih").then(function(r) { return r.json(); }).catch(function() { return null; })
+          : Promise.resolve(null),
+      ]).then(function(results) {
+        var idData = results[0];
+        var enData = results[1];
+        if (idData.code === 200) {
+          var surah = Object.assign({}, idData.data);
+          var ayats = [].concat(surah.ayat);
+          var newSurahNomor = targetSurah;
+          if (isEn && enData && enData.data && enData.data.ayahs) {
+            ayats = ayats.map(function(ayat, idx) {
+              return Object.assign({}, ayat, { teksInggris: enData.data.ayahs[idx] ? enData.data.ayahs[idx].text : "" });
+            });
+            surah.arti = enData.data.englishNameTranslation || surah.arti;
+          } else {
+            ayats = ayats.map(function(ayat) {
+              return Object.assign({}, ayat, { teksInggris: "" });
+            });
+          }
+          setCurrentSurah(surah);
+          setVerses(ayats);
+          setSurahNomor(targetSurah);
+          setCurrentAyat(targetAyat);
+          setLoading(false);
+        }
+      }).catch(console.error);
     }
   }, []);
 
-  // Fetch daftar surat
-  useEffect(() => {
-    fetch(`${API_BASE}/surat`)
-      .then((r) => r.json())
-      .then((d) => {
+  // Fetch daftar surat (surah selector data)
+  // If no URL params, load first surah as default
+  useEffect(function() {
+    fetch(API_BASE + "/surat")
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
         if (d.code === 200) {
           setSurahs(d.data);
-          if (urlParamsRef.current) {
-            const target = urlParamsRef.current;
-            loadSurah(target.surah);
-            setCurrentAyat(target.ayat);
-            urlParamsRef.current = null;
-          } else {
-            const first = d.data[0];
-            setSurahNomor(first.nomor);
+          // Check if URL params already loaded a surah
+          var hasUrlParams = window.location.search.includes("surah=");
+          if (!hasUrlParams) {
+            var first = d.data[0];
             loadSurah(first.nomor);
           }
         }
-      })
-      .catch(console.error);
+      }).catch(console.error);
   }, []);
 
   const loadSurah = useCallback((nomor) => {

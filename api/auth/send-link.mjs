@@ -15,8 +15,8 @@ export default async function handler(req, res) {
 
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
-  const apiKey = process.env.SMTP2GO_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "SMTP2GO_API_KEY not set" });
+  const apiKey = (process.env.SMTP2GO_API_KEY || "").trim();
+  if (!apiKey) return res.status(500).json({ error: "SMTP2GO_API_KEY not set", debug: "key is empty after trim" });
 
   let body = {};
   try { body = req.body || JSON.parse(req.body || "{}"); } catch {}

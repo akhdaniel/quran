@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./App.css";
@@ -1119,4 +1119,28 @@ function App() {
   );
 }
 
-export default App;
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error: error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return React.createElement("div", { style: { padding: "20px", textAlign: "center", fontFamily: "sans-serif" } },
+        React.createElement("h2", null, "Something went wrong :("),
+        React.createElement("p", { style: { color: "#ef4444" } }, this.state.error && this.state.error.toString()),
+        React.createElement("button", {
+          onClick: function() { window.location.reload(); },
+          style: { padding: "8px 16px", marginTop: "12px", cursor: "pointer" }
+        }, "Reload")
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const AppWithBoundary = () => React.createElement(ErrorBoundary, null, React.createElement(App));
+export default AppWithBoundary;

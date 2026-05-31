@@ -244,38 +244,92 @@ function App() {
     }
   }
 
-  // Load full Quran data from Vercel Blob storage (sekali)
+  // Load Quran data: coba dari storage dulu, fallback ke external API
   useEffect(() => {
+    var hasUrlParams = new URLSearchParams(window.location.search);
+    var urlSurah = Number(hasUrlParams.get("surah"));
+    var urlAyat = Number(hasUrlParams.get("ayat"));
+
+    // Coba dari storage
     fetch("/api/quran-data")
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error("Storage not available");
+        return r.json();
+      })
       .then(function(d) {
         if (d.surahs && d.surahs.length > 0) {
           setSurahs(d.surahs);
-          
-          // Check URL params for direct link
-          var params = new URLSearchParams(window.location.search);
-          var targetSurah = Number(params.get("surah"));
-          var targetAyat = Number(params.get("ayat"));
-          
-          if (targetSurah > 0) {
-            loadLocalSurah(targetSurah, d.surahs);
-            setCurrentAyat(targetAyat > 0 ? targetAyat : 1);
+          if (urlSurah > 0) {
+            loadLocalSurah(urlSurah, d.surahs);
+            setCurrentAyat(urlAyat > 0 ? urlAyat : 1);
           } else {
             loadLocalSurah(d.surahs[0].nomor, d.surahs);
           }
+        } else {
+          throw new Error("Empty data");
         }
-      }).catch(function(e) {
-        console.error("Failed to load Quran data:", e);
+      })
+      .catch(function() {
+        // Fallback: fetch dari external API
+        console.warn("Quran storage unavailable, fetching from external API...");
+        fetch("https://equran.id/api/v2/surat")
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.code === 200) {
+              setSurahs(d.data);
+              if (urlSurah > 0) {
+                loadExternalSurah(urlSurah, urlAyat);
+              } else {
+                loadExternalSurah(d.data[0].nomor, 1);
+              }
+            }
+          }).catch(console.error);
       });
   }, []);
+
+  // Helper: fetch surah dari external API (fallback)
+  function loadExternalSurah(nomor, ayatNum) {
+    Promise.all([
+      fetch("https://equran.id/api/v2/surat/" + nomor).then(function(r) { return r.json(); }),
+      fetch("https://api.alquran.cloud/v1/surah/" + nomor + "/en.sahih")
+        .then(function(r) { return r.json(); }).catch(function() { return null; }),
+    ]).then(function(results) {
+      var idData = results[0];
+      var enData = results[1];
+      if (idData.code === 200) {
+        var surah = Object.assign({}, idData.data);
+        var ayats = [].concat(surah.ayat);
+        var isEn = lang === "en";
+        if (isEn && enData && enData.data && enData.data.ayahs) {
+          ayats = ayats.map(function(ayat, idx) {
+            return Object.assign({}, ayat, { teksInggris: enData.data.ayahs[idx] ? enData.data.ayahs[idx].text : "" });
+          });
+          surah.arti = enData.data.englishNameTranslation || surah.arti;
+        } else {
+          ayats = ayats.map(function(ayat) { return Object.assign({}, ayat, { teksInggris: "" }); });
+        }
+        setCurrentSurah(surah);
+        setVerses(ayats);
+        setSurahNomor(nomor);
+        setCurrentAyat(ayatNum > 0 ? ayatNum : 1);
+        setLoading(false);
+      }
+    }).catch(console.error);
+  }
 
   const loadSurah = useCallback(function(nomor) {
     setLoading(false);
     setCurrentAyat(1);
     setJumpValue("");
     setAnalysis(null);
-    loadLocalSurah(nomor);
-  }, []);
+    if (surahs.length > 0 && surahs[0].ayat) {
+      // Data sudah ada di storage
+      loadLocalSurah(nomor);
+    } else {
+      // Fallback ke external API
+      loadExternalSurah(nomor, 1);
+    }
+  }, [surahs]);
 
   const totalAyat = verses.length;
   const ayat = verses[currentAyat - 1] || {};

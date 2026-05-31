@@ -43,6 +43,7 @@ export default async function handler(req, res) {
       }), {
         access: "private",
         addRandomSuffix: false,
+        allowOverwrite: true,
         token,
       });
 

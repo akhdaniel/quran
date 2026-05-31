@@ -25,7 +25,8 @@ export default async function handler(req, res) {
 
     // Quranic annotation characters to strip (non-standard, cause boxes)
     // These are end-of-verse marks and tashkeel annotations
-    const stripRegex = /[\u06D6-\u06ED\u08D0-\u08E1\u08E3-\u08FF\uFE70-\uFEFF\uFDF2-\uFDFD]/g;
+    // Strip Quranic annotations + U+06D5 ARABIC LETTER AE (uncommon, causes boxes)
+    const stripRegex = /[\u06D5-\u06ED\u08D0-\u08E1\u08E3-\u08FF\uFE70-\uFEFF\uFDF2-\uFDFD]/g;
 
     let cleaned = 0;
     for (const surah of data.surahs) {

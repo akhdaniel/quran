@@ -31,10 +31,10 @@ export default async function handler(req, res) {
       api_key: apiKey,
       to: [email],
       sender: "quran@xerpium.com",
-      subject: "Masuk ke Altanzeel",
+      subject: "Masuk ke Quran AI",
       html_body: `
         <div style="font-family: 'Segoe UI', sans-serif; max-width:480px; margin:0 auto; padding:32px; background:#1a1a2e; color:#e0e0e0; border-radius:12px;">
-          <h2 style="color:#c9a96e; margin-top:0;">Altanzeel</h2>
+          <h2 style="color:#c9a96e; margin-top:0;">Quran AI</h2>
           <p>Klik tombol di bawah untuk masuk ke akun Anda:</p>
           <a href="${magicUrl}" style="display:inline-block; padding:14px 32px; background:#c9a96e; color:#1a1a2e; text-decoration:none; border-radius:8px; font-weight:bold; margin:16px 0;">Masuk</a>
           <p style="color:#888; font-size:13px;">Link ini berlaku 15 menit. Abaikan email ini jika Anda tidak meminta login.</p>
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
           <p style="color:#666; font-size:12px;">${magicUrl}</p>
         </div>
       `,
-      text_body: "Masuk ke Altanzeel: " + magicUrl + "\n\nLink ini berlaku 15 menit.",
+      text_body: "Masuk ke Quran AI: " + magicUrl + "\n\nLink ini berlaku 15 menit.",
     };
 
     const smtpRes = await fetch(SMTP2GO_API, {

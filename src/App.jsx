@@ -1283,7 +1283,7 @@ function App() {
       {showLoginModal && (
         <div className="modal-overlay" onClick={() => { setShowLoginModal(false); setLoginSent(false); setLoginError(""); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">{lang === "id" ? "Masuk ke Altanzeel" : "Login to Altanzeel"}</h3>
+            <h3 className="modal-title">{lang === "id" ? "Masuk ke Quran AI" : "Login to Quran AI"}</h3>
             {!loginSent ? (
               <>
                 <p className="modal-hint">{lang === "id"

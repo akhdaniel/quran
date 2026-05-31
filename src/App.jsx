@@ -208,7 +208,6 @@ function App() {
         if (data?.content) {
           if (id !== loadIdRef.current) return; // stale
           setAnalysis(data.content);
-          localStorage.setItem(localKey, JSON.stringify(data.content));
           return;
         }
       }
@@ -418,10 +417,6 @@ function App() {
       const result =
         data.choices?.[0]?.message?.content || "Tidak ada respons.";
 
-      // Cache (local + backend)
-      const suffix = lang || "id";
-      const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}-${suffix}`;
-      localStorage.setItem(cacheKey, JSON.stringify(result));
       setAnalysis(result);
 
       // Simpan ke backend (fire & forget)
@@ -536,10 +531,6 @@ function App() {
   };
 
   const clearAnalysis = () => {
-    const suffix = lang || "id";
-    const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}-${suffix}`;
-    localStorage.removeItem(cacheKey);
-    localStorage.removeItem(`chat-${surahNomor}-${currentAyat}-${suffix}`);
     setAnalysis(null);
     setChatMessages([]);
   };

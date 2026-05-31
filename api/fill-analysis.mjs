@@ -86,6 +86,15 @@ export default async function handler(req, res) {
   if (!BLOB_TOKEN) return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
   if (!DEEPSEEK_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set. Set DEEPSEEK_API_KEY or VITE_DEEPSEEK_API_KEY in Vercel env" });
 
+  // Allow resetting progress via POST body { reset: <index> }
+  let body = {};
+  try { body = req.body || (typeof req.body === 'string' ? JSON.parse(req.body) : {}); } catch {}
+  const resetTo = body.reset !== undefined ? parseInt(body.reset, 10) : null;
+  if (resetTo !== null && !isNaN(resetTo) && resetTo >= 0) {
+    await saveProgress({ current: resetTo, total: 12472 });
+    return res.status(200).json({ ok: true, message: "Progress reset to index " + resetTo, progress: { current: resetTo, total: 12472 } });
+  }
+
   try {
     // Load data & progress
     const quranData = await loadQuranData();

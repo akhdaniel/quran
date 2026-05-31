@@ -672,34 +672,7 @@ body {
   background: var(--bg-active, rgba(59,130,246,0.13));
 }
 
-.jump-dropdown::-webkit-scrollbar {
-  width: 6px;
-}
-.jump-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-.jump-dropdown::-webkit-scrollbar-thumb {
-  background: var(--text-muted-3, #475569);
-  border-radius: 3px;
-}
 
-ppearance: none;
-  background-image: var(--arrow-svg);
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-}
-
-.jump-select:focus {
-  border-color: var(--accent-gold);
-}
-
-.jump-select option {
-  background: var(--bg-dropdown);
-  color: var(--text-primary);
-  font-family: "Noto Naskh Arabic", "Traditional Arabic", "Segoe UI", system-ui, sans-serif;
-  font-size: 0.82rem;
-}
 
 /* Keyboard shortcuts text */
 @media (max-width: 480px) {
@@ -1260,13 +1233,6 @@ ppearance: none;
 .nav-top .nav-btn {
   padding: 8px 8px !important;
   font-size: 0.82rem !important;
-}
-
-.nav-top .jump-select {
-  padding: 7px 24px 7px 10px !important;
-  font-size: 0.75rem !important;
-  max-width: 150px !important;
-  background-position: right 6px center !important;
 }
 
 @media (max-width: 480px) {

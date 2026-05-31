@@ -466,6 +466,48 @@ function App() {
     }
   };
 
+  const handleShare = () => {
+    const surahName = currentSurah?.namaLatin || "";
+    const surahNumber = surahNomor || 1;
+    const ayatNumber = currentAyat || 1;
+    const arabText = ayat?.teksArab || "";
+    const translation = lang === "en" && ayat?.teksInggris ? ayat.teksInggris : ayat?.teksIndonesia || "";
+    const url = `${window.location.origin}${window.location.pathname}#surah=${surahNumber}&ayat=${ayatNumber}`;
+    
+    const shareText = `${surahName} ${ayatNumber} - ${url}
+
+${arabText}
+
+${translation}`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: `${surahName} ${ayatNumber}`,
+        text: `${arabText}
+
+${translation}`,
+        url: url,
+      }).catch(() => {});
+    } else {
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+      const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(shareText)}`;
+      
+      const action = window.prompt(
+        lang === "id"
+          ? "Bagikan ke:\\n1. WhatsApp\\n2. X (Twitter)\\n3. Facebook\\n4. Salin tautan"
+          : "Share to:\\n1. WhatsApp\\n2. X (Twitter)\\n3. Facebook\\n4. Copy link"
+      );
+      if (action === "1") window.open(waUrl, "_blank", "noopener");
+      else if (action === "2") window.open(xUrl, "_blank", "noopener");
+      else if (action === "3") window.open(fbUrl, "_blank", "noopener");
+      else if (action === "4") {
+        navigator.clipboard.writeText(shareText).catch(() => {});
+        alert(lang === "id" ? "Tautan disalin!" : "Link copied!");
+      }
+    }
+  };
+
   const clearAnalysis = () => {
     const suffix = lang || "id";
     const cacheKey = `${STORAGE_PREFIX}${surahNomor}-${currentAyat}-${suffix}`;

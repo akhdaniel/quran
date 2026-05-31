@@ -1,6 +1,6 @@
 // POST /api/fill-analysis — generate analysis untuk ayat yang belum ada
 // Proses 5 ayat per panggilan, simpan progress di Blob
-import { put, get } from "@vercel/blob";
+import { put, get, del } from "@vercel/blob";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
@@ -86,12 +86,38 @@ export default async function handler(req, res) {
   if (!BLOB_TOKEN) return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
   if (!DEEPSEEK_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set. Set DEEPSEEK_API_KEY or VITE_DEEPSEEK_API_KEY in Vercel env" });
 
-  // Allow resetting progress via POST body { reset: <index> }
+  // Allow resetting progress via POST body { reset: <index>, clean?: true }
   let body = {};
   try { body = req.body || (typeof req.body === 'string' ? JSON.parse(req.body) : {}); } catch {}
   const resetTo = body.reset !== undefined ? parseInt(body.reset, 10) : null;
   if (resetTo !== null && !isNaN(resetTo) && resetTo >= 0) {
     await saveProgress({ current: resetTo, total: 12472 });
+    if (body.clean === true) {
+      // Delete all existing analysis files from reset point onward
+      const quranData = await loadQuranData();
+      if (quranData) {
+        let deleted = 0;
+        let idx = 0;
+        for (const s of quranData.surahs) {
+          for (const a of s.ayat) {
+            for (const lang of ["id", "en"]) {
+              if (idx >= resetTo) {
+                const key = PREFIX + s.nomor + "-" + a.nomor + "-" + lang + ".json";
+                try {
+                  const exists = await get(key, { access: "private", token: BLOB_TOKEN });
+                  if (exists) {
+                    await del(key, { access: "private", token: BLOB_TOKEN });
+                    deleted++;
+                  }
+                } catch {}
+              }
+              idx++;
+            }
+          }
+        }
+        return res.status(200).json({ ok: true, message: "Progress reset to " + resetTo + " and " + deleted + " analysis files cleaned", progress: { current: resetTo, total: 12472 }, cleaned: deleted });
+      }
+    }
     return res.status(200).json({ ok: true, message: "Progress reset to index " + resetTo, progress: { current: resetTo, total: 12472 } });
   }
 

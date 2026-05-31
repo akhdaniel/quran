@@ -535,7 +535,17 @@ function App() {
   const handlePlay = () => {
     if (!ayat?.teksArab) return;
     
-    // Stop current
+    // Pause/resume if same ayat
+    if (audioPlaying === currentAyat) {
+      if (audioRef.current.paused) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+      return;
+    }
+    
+    // Stop previous
     if (audioPlaying) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -543,7 +553,6 @@ function App() {
     
     const surahStr = String(surahNomor).padStart(3, "0");
     const ayatStr = String(currentAyat).padStart(3, "0");
-    // Mishary Rashid Al-Afasy reciter
     const qariName = qariList.find(function(q) { return q.id === selectedQari; })?.name || qariList[0].name;
     const audioUrl = "https://cdn.equran.id/audio-partial/" + qariName + "/" + surahStr + ayatStr + ".mp3";
     
@@ -554,7 +563,6 @@ function App() {
     audioRef.current.onended = () => setAudioPlaying(null);
     audioRef.current.onerror = () => {
       setAudioPlaying(null);
-      // Fallback to another reciter
       audioRef.current.src = "https://cdn.equran.id/audio-partial/" + qariList[0].name + "/" + surahStr + ayatStr + ".mp3";
       audioRef.current.play().catch(() => setAudioPlaying(null));
     };
@@ -929,7 +937,7 @@ function App() {
         >
           <div className="ayat-toolbar">
             <button className="ayat-btn play-btn" onClick={handlePlay} title={lang === "id" ? "Putar audio" : "Play audio"}>
-              {audioPlaying === currentAyat ? "⏸" : "▶"}
+              {audioPlaying === currentAyat && !audioRef.current.paused ? "⏸" : "▶"}
             </button>
             <span className="ayat-btn num-btn">{ayat.nomor || currentAyat}</span>
             <button className="ayat-btn share-btn" onClick={() => handleShare()} title={lang === "id" ? "Bagikan" : "Share"}>

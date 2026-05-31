@@ -233,6 +233,25 @@ function App() {
     }
   };
 
+  // Sync URL hash for direct sharing links
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const params = new URLSearchParams(hash);
+      const s = params.get("surah");
+      const a = params.get("ayat");
+      if (s && a) {
+        setSurahNomor(Number(s));
+        setCurrentAyat(Number(a));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const hash = `surah=${surahNomor || 1}&ayat=${currentAyat || 1}`;
+    window.location.hash = hash;
+  }, [surahNomor, currentAyat]);
+
   // Fetch daftar surat
   useEffect(() => {
     fetch(`${API_BASE}/surat`)
@@ -800,7 +819,16 @@ function App() {
           className="ayat-card"
           key={`${currentSurah?.nomor}-${currentAyat}`}
         >
-          <div className="ayat-number">{ayat.nomor || currentAyat}</div>
+          <div className="ayat-number">
+            {ayat.nomor || currentAyat}
+            <button
+              className="share-btn"
+              onClick={() => handleShare()}
+              title={lang === "id" ? "Bagikan" : "Share"}
+            >
+              📤
+            </button>
+          </div>
           <div className="ayat-arabic">
             {ayatWords.map((w, i) => (
               <span

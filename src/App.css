@@ -459,6 +459,26 @@ body {
   margin: 0 auto 20px;
 }
 
+
+/* Share Button */
+.share-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  vertical-align: middle;
+  margin-left: 8px;
+  opacity: 0.7;
+}
+
+.share-btn:hover {
+  background: var(--bg-hover, #334155);
+  opacity: 1;
+}
+
 .ayat-arabic {
   text-align: center;
   font-size: 1.4rem;
@@ -1303,4 +1323,24 @@ body {
   font-weight: 700;
   color: var(--text-arabic);
   line-height: 1.6;
+}
+
+
+/* Share Button */
+.share-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  vertical-align: middle;
+  margin-left: 8px;
+  opacity: 0.7;
+}
+
+.share-btn:hover {
+  background: var(--bg-hover, #334155);
+  opacity: 1;
 }

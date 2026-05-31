@@ -1,7 +1,7 @@
 {
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install",
+  "installCommand": "npm install",
   "functions": {
     "api/*.mjs": {
       "runtime": "@vercel/node@4.0.0"

@@ -234,6 +234,16 @@ function App() {
           const p = data.preferences;
           if (p.qari) setSelectedQari(p.qari);
           if (p.theme) setTheme(p.theme);
+          if (p.lastRead && p.lastRead.surah && p.lastRead.ayat) {
+            localStorage.setItem('quran-last-surah', p.lastRead.surah);
+            localStorage.setItem('quran-last-ayat', p.lastRead.ayat);
+            // Navigate to saved position (only if not already viewing that)
+            var curr = surahNomor;
+            if (curr !== p.lastRead.surah || currentAyat !== p.lastRead.ayat) {
+              handleSurahChange(p.lastRead.surah);
+              setCurrentAyat(p.lastRead.ayat);
+            }
+          }
         }
       })
       .catch(() => {});
@@ -401,7 +411,15 @@ function App() {
             loadLocalSurah(urlSurah, d.surahs);
             setCurrentAyat(urlAyat > 0 ? urlAyat : 1);
           } else {
-            loadLocalSurah(d.surahs[0].nomor, d.surahs);
+            // Restore last read position
+            var savedSurah = localStorage.getItem('quran-last-surah');
+            var savedAyat = localStorage.getItem('quran-last-ayat');
+            if (savedSurah) {
+              loadLocalSurah(Number(savedSurah), d.surahs);
+              if (savedAyat) setCurrentAyat(Number(savedAyat));
+            } else {
+              loadLocalSurah(d.surahs[0].nomor, d.surahs);
+            }
           }
         }
       })

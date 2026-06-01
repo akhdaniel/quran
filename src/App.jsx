@@ -1147,11 +1147,22 @@ function App() {
 
         {/* Analyze */}
         <div className="analyze-section">
-          {!analysis && !analyzing && (
+          {!analysis && !analyzing && (authUser ? (
             <button className="analyze-btn" onClick={handleAnalyze}>
               🤖 {t("analyzeBtn")}
             </button>
-          )}
+          ) : (
+            <div className="chat-login-prompt">
+              <span>{lang === "id" ? "Login untuk menganalisa ayat" : "Login to analyze verse"}</span>
+              <a
+                href="#"
+                className="chat-login-link"
+                onClick={(e) => { e.preventDefault(); setShowLoginModal(true); }}
+              >
+                {t("chatLoginLink")}
+              </a>
+            </div>
+          ))}
 
           {analyzing && (
             <div className="analyzing">
@@ -1164,23 +1175,25 @@ function App() {
             <div className="analysis-result" ref={analysisRef}>
               <div className="analysis-header">
                 <span className="analysis-title">📊 {t("analysisTitle")}</span>
-                <div className="analysis-actions">
-                  <button
-                    className="analysis-regen-btn"
-                    onClick={handleAnalyze}
-                    disabled={analyzing}
-                    title={t("regenTitle")}
-                  >
-                    🔄
-                  </button>
-                  <button
-                    className="analysis-close-btn"
-                    onClick={clearAnalysis}
-                    title={t("closeTitle")}
-                  >
-                    ✕
-                  </button>
-                </div>
+                {authUser && (
+                  <div className="analysis-actions">
+                    <button
+                      className="analysis-regen-btn"
+                      onClick={handleAnalyze}
+                      disabled={analyzing}
+                      title={t("regenTitle")}
+                    >
+                      🔄
+                    </button>
+                    <button
+                      className="analysis-close-btn"
+                      onClick={clearAnalysis}
+                      title={t("closeTitle")}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
               </div>
 
 

@@ -1039,7 +1039,7 @@ function App() {
             onClick={prevAyat}
             disabled={currentAyat <= 1}
           >
-            &#8592; {t("prev")}
+            ←
           </button>
 
           <select
@@ -1065,7 +1065,7 @@ function App() {
             onClick={nextAyat}
             disabled={currentAyat >= totalAyat}
           >
-            {t("next")} &rarr;
+            →
           </button>
         </div>
 
@@ -1247,7 +1247,7 @@ function App() {
             onClick={prevAyat}
             disabled={currentAyat <= 1}
           >
-            &#8592; {t("prev")}
+            ←
           </button>
 
           <select
@@ -1273,7 +1273,7 @@ function App() {
             onClick={nextAyat}
             disabled={currentAyat >= totalAyat}
           >
-            {t("next")} &rarr;
+            →
           </button>
         </div>
       </main>

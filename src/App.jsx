@@ -1175,7 +1175,7 @@ function App() {
             <div className="analysis-result" ref={analysisRef}>
               <div className="analysis-header">
                 <span className="analysis-title">📊 {t("analysisTitle")}</span>
-                {authUser && (
+                {authUser && authUser.email === "daniel@vitraining.com" && (
                   <div className="analysis-actions">
                     <button
                       className="analysis-regen-btn"

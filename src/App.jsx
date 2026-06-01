@@ -310,6 +310,7 @@ function App() {
     setAuthToken(null);
     setAuthUser(null);
     setShowLoginModal(false);
+    setShowSettings(false);
   }
 
   const [chatMessages, setChatMessages] = useState([]);

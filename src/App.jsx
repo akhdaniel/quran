@@ -113,6 +113,14 @@ function App() {
     localStorage.setItem("quran-lang", lang);
   }, [lang]);
 
+  // ─── LastRead local persistence ────────────────────────────
+  useEffect(() => {
+    if (currentSurah) {
+      localStorage.setItem("quran-last-surah", currentSurah.nomor);
+      localStorage.setItem("quran-last-ayat", currentAyat);
+    }
+  }, [currentSurah?.nomor, currentAyat]);
+
   // ─── Theme (dark/light) ─────────────────────────────────
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("quran-theme") || "dark";
@@ -237,11 +245,16 @@ function App() {
           if (p.lastRead && p.lastRead.surah && p.lastRead.ayat) {
             localStorage.setItem('quran-last-surah', p.lastRead.surah);
             localStorage.setItem('quran-last-ayat', p.lastRead.ayat);
-            // Navigate to saved position (only if not already viewing that)
-            var curr = surahNomor;
-            if (curr !== p.lastRead.surah || currentAyat !== p.lastRead.ayat) {
-              handleSurahChange(p.lastRead.surah);
-              setCurrentAyat(p.lastRead.ayat);
+            // Navigate to saved position via loadSurah + set ayat
+            if (surahs.length > 0) {
+              var targetSurah = surahs.find(function(s) { return s.nomor === p.lastRead.surah; });
+              if (targetSurah) {
+                setCurrentSurah(targetSurah);
+                setVerses(targetSurah.ayat || []);
+                setSurahNomor(targetSurah.nomor);
+                setCurrentAyat(p.lastRead.ayat);
+                setLoading(false);
+              }
             }
           }
         }

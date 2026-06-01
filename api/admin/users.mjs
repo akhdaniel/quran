@@ -9,10 +9,8 @@ export default async function handler(req, res) {
   if (!BLOB_TOKEN) return res.status(500).json({ error: "BLOB token not set" });
 
   try {
-    const entries = [];
-    for await (const blob of list({ prefix: "users/", token: BLOB_TOKEN })) {
-      entries.push(blob.pathname);
-    }
+    const { blobs } = await list({ prefix: "users/", token: BLOB_TOKEN });
+    const entries = blobs.map((b) => b.pathname);
 
     // Read each user to get email
     const users = [];

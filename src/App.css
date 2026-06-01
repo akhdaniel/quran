@@ -657,24 +657,29 @@ body {
 
 .nav-btn {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   padding: 0;
-  border-radius: 12px;
-  border: 1px solid var(--border-primary);
+  border-radius: 14px;
+  border: 2px solid var(--border-primary);
   background: var(--bg-elevated);
-  color: var(--text-primary);
-  font-size: 1.2rem;
+  color: var(--accent-gold);
+  font-size: 1.4rem;
+  font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .nav-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
+  background: var(--accent-gold);
+  color: #1a1a2e;
   border-color: var(--accent-gold);
+  box-shadow: 0 2px 12px rgba(201,169,110,0.4);
+  transform: scale(1.05);
 }
 
 .nav-btn:disabled {
@@ -1338,16 +1343,17 @@ body {
 }
 
 .nav-top .nav-btn {
-  width: 40px !important;
-  height: 40px !important;
-  font-size: 1.1rem !important;
+  width: 44px !important;
+  height: 44px !important;
+  font-size: 1.3rem !important;
+  border-width: 2px !important;
 }
 
 @media (max-width: 480px) {
   .nav-top .nav-btn {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 1rem !important;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.1rem !important;
   }
   .nav-top .jump-input {
     width: 44px !important;

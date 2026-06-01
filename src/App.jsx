@@ -113,15 +113,6 @@ function App() {
     localStorage.setItem("quran-lang", lang);
   }, [lang]);
 
-  // ─── LastRead local persistence ────────────────────────────
-  useEffect(() => {
-    if (currentSurah) {
-      localStorage.setItem("quran-last-surah", currentSurah.nomor);
-      localStorage.setItem("quran-last-ayat", currentAyat);
-    }
-  }, [currentSurah?.nomor, currentAyat]);
-
-  // ─── Theme (dark/light) ─────────────────────────────────
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("quran-theme") || "dark";
   });
@@ -184,6 +175,14 @@ function App() {
   useEffect(() => {
     localStorage.setItem("quran-qari", selectedQari);
   }, [selectedQari]);
+
+  // ─── LastRead local persistence ────────────────────────────
+  useEffect(() => {
+    if (currentSurah) {
+      localStorage.setItem("quran-last-surah", currentSurah.nomor);
+      localStorage.setItem("quran-last-ayat", currentAyat);
+    }
+  }, [currentSurah, currentAyat]);
 
   // ─── Auth ──────────────────────────────────────────────
   const API_BASE = "";

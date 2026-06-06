@@ -1,12 +1,12 @@
 // POST /api/fill-analysis — generate analysis untuk ayat yang belum ada
-// Proses 5 ayat per panggilan, simpan progress di Blob
+// Proses 1 ayat per panggilan (BATCH=1 biar gak timeout di Vercel)
 import { put, get } from "@vercel/blob";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
 const PROGRESS_KEY = "analysis/progress.json";
-const BATCH = 3; // 5 ayat per panggilan
+const BATCH = 1; // 1 ayat per panggilan biar cepet
 const PREFIX = "analysis/";
 
 // ID Prompt (clean, no JSON)

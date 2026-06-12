@@ -1,8 +1,10 @@
-// Shared auth helpers — JWT + Blob user storage
+// Shared auth helpers — JWT + Supabase user storage
 import { createHmac, randomUUID } from "crypto";
-import { put, get, del } from "@vercel/blob";
+import { createClient } from "@supabase/supabase-js";
 
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Signing secret: SMTP2GO key used as HMAC secret
 function getSecret() {
@@ -32,24 +34,22 @@ export function verifyJWT(token) {
   } catch { return null; }
 }
 
-// User storage helpers
-function userKey(email) {
-  const hash = Buffer.from(email.toLowerCase().trim()).toString("base64url");
-  return "users/" + hash + ".json";
-}
-
+// User helpers via Supabase
 export async function getUser(email) {
-  const key = userKey(email);
+  if (!supabase) return null;
   try {
-    const blob = await get(key, { access: "private", token: BLOB_TOKEN });
-    if (!blob) return null;
-    const chunks = [];
-    for await (const chunk of blob.stream) chunks.push(chunk);
-    return JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email.toLowerCase().trim())
+      .single();
+    if (error) return null;
+    return data;
   } catch { return null; }
 }
 
 export async function createUser(email) {
+  if (!supabase) throw new Error("Database not configured");
   const user = {
     id: "user_" + randomUUID().slice(0, 8),
     email: email.toLowerCase().trim(),
@@ -58,52 +58,80 @@ export async function createUser(email) {
       theme: "dark",
       lastRead: { surah: 1, ayat: 1 },
     },
-    createdAt: new Date().toISOString(),
   };
-  await put(userKey(email), JSON.stringify(user), {
-    access: "private", addRandomSuffix: false, allowOverwrite: true, token: BLOB_TOKEN,
-  });
-  return user;
+
+  const { data, error } = await supabase
+    .from("users")
+    .insert(user)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 export async function saveUserPrefs(email, prefs) {
-  const user = await getUser(email);
-  if (!user) return null;
-  user.preferences = { ...user.preferences, ...prefs };
-  await put(userKey(email), JSON.stringify(user), {
-    access: "private", addRandomSuffix: false, allowOverwrite: true, token: BLOB_TOKEN,
-  });
-  return user;
+  if (!supabase) throw new Error("Database not configured");
+  // Get current prefs first
+  const { data: user, error: getErr } = await supabase
+    .from("users")
+    .select("preferences")
+    .eq("email", email.toLowerCase().trim())
+    .single();
+
+  if (getErr) return null;
+
+  const mergedPrefs = { ...user.preferences, ...prefs };
+
+  const { data, error } = await supabase
+    .from("users")
+    .update({ preferences: mergedPrefs })
+    .eq("email", email.toLowerCase().trim())
+    .select()
+    .single();
+
+  if (error) return null;
+  return data;
 }
 
-// Magic link helpers
-const LINK_PREFIX = "magic-links/";
-
+// Magic link helpers via Supabase
 export async function storeMagicLink(email) {
+  if (!supabase) throw new Error("Database not configured");
   const token = randomUUID();
   const data = {
+    token,
     email: email.toLowerCase().trim(),
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 min
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    consumed: false,
   };
-  await put(LINK_PREFIX + token + ".json", JSON.stringify(data), {
-    access: "private", addRandomSuffix: false, allowOverwrite: true, token: BLOB_TOKEN,
-  });
+
+  const { error } = await supabase.from("magic_links").insert(data);
+  if (error) throw error;
   return token;
 }
 
 export async function consumeMagicLink(token) {
-  const key = LINK_PREFIX + token + ".json";
+  if (!supabase) return null;
   try {
-    const blob = await get(key, { access: "private", token: BLOB_TOKEN });
-    if (!blob) return null;
-    const chunks = [];
-    for await (const chunk of blob.stream) chunks.push(chunk);
-    const data = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
-    // Delete immediately (one-time use)
-    await del(key, { access: "private", token: BLOB_TOKEN });
+    const { data, error } = await supabase
+      .from("magic_links")
+      .select("*")
+      .eq("token", token)
+      .eq("consumed", false)
+      .single();
+
+    if (error) return null;
+
     // Check expiry
-    if (new Date(data.expiresAt) < new Date()) return null;
+    if (new Date(data.expires_at) < new Date()) return null;
+
+    // Mark as consumed (one-time use)
+    await supabase
+      .from("magic_links")
+      .update({ consumed: true })
+      .eq("token", token);
+
     return data;
   } catch { return null; }
 }

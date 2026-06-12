@@ -1,5 +1,9 @@
-// GET /api/quran-data — serve full Quran data from Vercel Blob
-import { get } from "@vercel/blob";
+// GET /api/quran-data — serve full Quran data from Supabase
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
@@ -10,19 +14,25 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
+  if (!supabase) {
+    return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
+  }
 
   try {
-    const result = await get("quran-data/full.json", { access: "private", token });
-    if (!result) return res.status(404).json({ error: "Data not found. Run POST /api/sync-quran first." });
+    const { data, error } = await supabase
+      .from("quran_data")
+      .select("data")
+      .eq("key", "full")
+      .single();
 
-    const chunks = [];
-    for await (const chunk of result.stream) chunks.push(chunk);
-    const text = Buffer.concat(chunks).toString("utf-8");
-    const data = JSON.parse(text);
+    if (error) {
+      if (error.code === "PGRST116") {
+        return res.status(404).json({ error: "Data not found. Run POST /api/sync-quran first." });
+      }
+      throw error;
+    }
 
-    return res.status(200).json(data);
+    return res.status(200).json(data.data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

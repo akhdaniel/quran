@@ -1,5 +1,9 @@
-// API /api/analysis — simpan & baca analisa ayat via @vercel/blob SDK
-import { put, get } from "@vercel/blob";
+// API /api/analysis — simpan & baca analisa ayat via Supabase
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
@@ -9,23 +13,18 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-
   // Health check (GET tanpa params)
   if (req.method === "GET" && !req.query.surah) {
     return res.status(200).json({
       status: "alive",
-      token_exists: !!token,
-      token_prefix: (token || "").substring(0, 15),
+      db_connected: !!supabase,
       node: process.version,
     });
   }
 
-  if (!token) {
-    return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
+  if (!supabase) {
+    return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
   }
-
-  const PREFIX = "analysis/";
 
   // POST — simpan
   if (req.method === "POST") {
@@ -34,23 +33,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "surah, ayat, content required" });
     }
 
-    const key = `${PREFIX}${surah}-${ayat}-${lang || "id"}.json`;
-
     try {
-      const result = await put(key, JSON.stringify({
-        surah, ayat, content,
-        updatedAt: new Date().toISOString(),
-      }), {
-        access: "private",
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        token,
+      const { error } = await supabase.from("analysis").upsert({
+        surah: parseInt(surah),
+        ayat: parseInt(ayat),
+        lang: lang || "id",
+        content,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: "surah,ayat,lang",
+        ignoreDuplicates: false,
       });
 
-      return res.status(200).json({ ok: true, url: result.url, downloadUrl: result.downloadUrl });
+      if (error) throw error;
+      return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error("PUT error:", err);
-      return res.status(500).json({ error: "PUT: " + err.message });
+      console.error("SUPABASE upsert error:", err);
+      return res.status(500).json({ error: "POST: " + err.message });
     }
   }
 
@@ -61,22 +60,31 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "surah and ayat required" });
     }
 
-    const key = `${PREFIX}${surah}-${ayat}-${lang || "id"}.json`;
-
     try {
-      const result = await get(key, { access: "private", token });
-      if (!result) {
-        return res.status(404).json({ error: "not found" });
+      const { data, error } = await supabase
+        .from("analysis")
+        .select("content, updated_at")
+        .eq("surah", parseInt(surah))
+        .eq("ayat", parseInt(ayat))
+        .eq("lang", lang || "id")
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return res.status(404).json({ error: "not found" });
+        }
+        throw error;
       }
-      // Baca dari stream (SDK return { stream, blob })
-      const chunks = [];
-      for await (const chunk of result.stream) {
-        chunks.push(chunk);
-      }
-      const text = Buffer.concat(chunks).toString("utf-8");
-      return res.status(200).json(JSON.parse(text));
+
+      return res.status(200).json({
+        surah: parseInt(surah),
+        ayat: parseInt(ayat),
+        lang: lang || "id",
+        content: data.content,
+        updatedAt: data.updated_at,
+      });
     } catch (err) {
-      return res.status(404).json({ error: "GET: " + err.message });
+      return res.status(500).json({ error: "GET: " + err.message });
     }
   }
 

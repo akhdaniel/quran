@@ -1,6 +1,10 @@
 // POST /api/sync-quran/clean — strip Quranic annotation chars from Arabic text
-// Run once to clean up non-standard Unicode characters in Blob data
-import { put, get } from "@vercel/blob";
+// Run once to clean up non-standard Unicode characters in stored data
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
@@ -10,22 +14,22 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
+  if (!supabase) {
+    return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
+  }
 
   try {
-    // Baca data yg ada
-    const blob = await get("quran-data/full.json", { access: "private", token });
-    if (!blob) return res.status(404).json({ error: "Data not found, run /api/sync-quran first" });
+    // Baca data yang ada
+    const { data: record, error: readErr } = await supabase
+      .from("quran_data")
+      .select("data")
+      .eq("key", "full")
+      .single();
 
-    const chunks = [];
-    for await (const chunk of blob.stream) chunks.push(chunk);
-    const text = Buffer.concat(chunks).toString("utf-8");
-    const data = JSON.parse(text);
+    if (readErr) return res.status(404).json({ error: "Data not found, run /api/sync-quran first" });
+    const data = record.data;
 
-    // Quranic annotation characters to strip (non-standard, cause boxes)
-    // These are end-of-verse marks and tashkeel annotations
-    // Strip Quranic annotations + U+06D5 ARABIC LETTER AE (uncommon, causes boxes)
+    // Quranic annotation characters to strip
     const stripRegex = /[\u06D5-\u06ED\u08D0-\u08E1\u08E3-\u08FF\uFE70-\uFEFF\uFDF2-\uFDFD]/g;
 
     let cleaned = 0;
@@ -40,7 +44,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Normalize spaces across all ayats (from char removals)
+    // Normalize spaces
     let spaceNormalized = 0;
     for (const surah of data.surahs) {
       for (const ayat of surah.ayat) {
@@ -52,14 +56,17 @@ export default async function handler(req, res) {
       }
     }
 
-    // Simpan balik
+    // Simpan balik ke Supabase
     data.cleanedAt = new Date().toISOString();
-    await put("quran-data/full.json", JSON.stringify(data), {
-      access: "private",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      token,
-    });
+    const { error: saveErr } = await supabase
+      .from("quran_data")
+      .upsert({
+        key: "full",
+        data: data,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key", ignoreDuplicates: false });
+
+    if (saveErr) throw saveErr;
 
     return res.status(200).json({
       ok: true,

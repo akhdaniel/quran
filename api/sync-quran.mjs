@@ -1,5 +1,9 @@
-// POST /api/sync-quran — fetch all Quran data (ID + EN), save to Vercel Blob
-import { put } from "@vercel/blob";
+// POST /api/sync-quran — fetch all Quran data (ID + EN), save to Supabase
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Batch helper: process items with concurrency limit
 async function batchFetch(items, fn, concurrency) {
@@ -23,8 +27,9 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
+  if (!supabase) {
+    return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
+  }
 
   try {
     // 1. Fetch daftar surat dari equran.id
@@ -92,8 +97,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // 5. Simpan ke Vercel Blob
-    console.log("Saving to Blob...");
+    // 5. Simpan ke Supabase
+    console.log("Saving to Supabase...");
     const blobData = {
       source: "equran.id + alquran.cloud",
       syncedAt: new Date().toISOString(),
@@ -102,16 +107,21 @@ export default async function handler(req, res) {
       surahs: result,
     };
 
-    const blobRes = await put("quran-data/full.json", JSON.stringify(blobData), {
-      access: "private",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      token,
-    });
+    const { error } = await supabase
+      .from("quran_data")
+      .upsert({
+        key: "full",
+        data: blobData,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: "key",
+        ignoreDuplicates: false,
+      });
+
+    if (error) throw error;
 
     return res.status(200).json({
       ok: true,
-      url: blobRes.url,
       totalSurahs: blobData.totalSurahs,
       totalAyats: blobData.totalAyats,
       enComplete: result.every(s => s.ayat.every(a => a.teksInggris)),

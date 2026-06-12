@@ -1,15 +1,17 @@
 // POST /api/fill-analysis — generate analysis untuk ayat yang belum ada
 // Proses 1 ayat per panggilan (BATCH=1 biar gak timeout di Vercel)
-import { put, get } from "@vercel/blob";
+import { createClient } from "@supabase/supabase-js";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
-const PROGRESS_KEY = "analysis/progress.json";
-const BATCH = 1; // 1 ayat per panggilan biar cepet
-const PREFIX = "analysis/";
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
-// ID Prompt (clean, no JSON)
+const BATCH = 1; // 1 ayat per panggilan biar cepet
+const PROGRESS_KEY = "analysis_progress";
+
+// ID Prompt
 const PROMPT_ID = `Analisislah ayat Al-Qur'an berikut secara mendalam dan terstruktur dalam Bahasa Indonesia. Langsung ke analisis, tanpa pendahuluan atau penutup.
 
 {surahInfo}**Ayat:**
@@ -44,39 +46,53 @@ const PROMPT_EN = `Analyze the following Qur'anic verse deeply and in a structur
 5. **Asbabun Nuzul (Occasion of Revelation)** — the authentic reasons/context for this verse's revelation, if known. If no specific narration exists, state that the verse was revealed without a specific occasion (ghairu sababin nuzul) and still provide its historical context`;
 
 async function loadQuranData() {
-  const blob = await get("quran-data/full.json", { access: "private", token: BLOB_TOKEN });
-  if (!blob) return null;
-  const chunks = [];
-  for await (const chunk of blob.stream) chunks.push(chunk);
-  return JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("quran_data")
+    .select("data")
+    .eq("key", "full")
+    .single();
+  if (error) return null;
+  return data.data;
 }
 
 async function loadProgress() {
+  if (!supabase) return { current: 0, total: 0 };
   try {
-    const blob = await get(PROGRESS_KEY, { access: "private", token: BLOB_TOKEN });
-    if (!blob) return { current: 0, total: 0 };
-    const chunks = [];
-    for await (const chunk of blob.stream) chunks.push(chunk);
-    return JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+    const { data, error } = await supabase
+      .from("quran_data")
+      .select("data")
+      .eq("key", PROGRESS_KEY)
+      .single();
+    if (error) return { current: 0, total: 0 };
+    return data.data;
   } catch {
     return { current: 0, total: 0 };
   }
 }
 
 async function saveProgress(progress) {
-  await put(PROGRESS_KEY, JSON.stringify(progress), {
-    access: "private", addRandomSuffix: false, allowOverwrite: true, token: BLOB_TOKEN,
-  });
+  if (!supabase) return;
+  await supabase
+    .from("quran_data")
+    .upsert({
+      key: PROGRESS_KEY,
+      data: progress,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "key", ignoreDuplicates: false });
 }
 
-async function getAnalysis(surah, ayat, lang) {
-  const key = PREFIX + surah + "-" + ayat + "-" + lang + ".json";
-  try {
-    const blob = await get(key, { access: "private", token: BLOB_TOKEN });
-    return !!blob;
-  } catch {
-    return false;
-  }
+async function getAnalysisExists(surah, ayat, lang) {
+  if (!supabase) return false;
+  const { data, error } = await supabase
+    .from("analysis")
+    .select("id")
+    .eq("surah", surah)
+    .eq("ayat", ayat)
+    .eq("lang", lang)
+    .maybeSingle();
+  if (error) return false;
+  return !!data;
 }
 
 export default async function handler(req, res) {
@@ -85,12 +101,12 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (!BLOB_TOKEN) return res.status(500).json({ error: "BLOB_READ_WRITE_TOKEN not set" });
-  if (!DEEPSEEK_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set. Set DEEPSEEK_API_KEY or VITE_DEEPSEEK_API_KEY in Vercel env" });
+  if (!supabase) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
+  if (!DEEPSEEK_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set" });
 
-  // Allow resetting progress via POST body { reset: <index>, clean?: true }
+  // Allow resetting progress
   let body = {};
-  try { body = req.body || (typeof req.body === 'string' ? JSON.parse(req.body) : {}); } catch {}
+  try { body = req.body || {}; } catch {}
   const resetTo = body.reset !== undefined ? parseInt(body.reset, 10) : null;
   if (resetTo !== null && !isNaN(resetTo) && resetTo >= 0) {
     await saveProgress({ current: resetTo, total: 12472 });
@@ -102,7 +118,7 @@ export default async function handler(req, res) {
   try {
     // Load data & progress
     const quranData = await loadQuranData();
-    if (!quranData) return res.status(404).json({ error: "Quran data not found" });
+    if (!quranData) return res.status(404).json({ error: "Quran data not found. Sync quran data first." });
 
     let progress = await loadProgress();
 
@@ -118,17 +134,15 @@ export default async function handler(req, res) {
       await saveProgress(progress);
     }
 
-    // Find next BATCH tasks that don't have analysis yet
+    // Find next BATCH tasks
     const tasks = [];
     let idx = 0;
-    let scanned = 0;
     for (const s of quranData.surahs) {
       for (const a of s.ayat) {
         for (const lang of ["id", "en"]) {
           if (tasks.length >= BATCH) break;
           if (idx < progress.current) { idx++; continue; }
-          scanned++;
-          const exists = forceReanalyze ? false : await getAnalysis(s.nomor, a.nomor, lang);
+          const exists = forceReanalyze ? false : await getAnalysisExists(s.nomor, a.nomor, lang);
           if (!exists) {
             const arab = a.teksArab || "";
             const translation = lang === "en" && a.teksInggris ? a.teksInggris : a.teksIndonesia || "";
@@ -140,7 +154,7 @@ export default async function handler(req, res) {
               .replace("{translation}", translation)
               .replace("{latinSegment}", latinSegment);
 
-            tasks.push({ surah: s.nomor, ayat: a.nomor, lang, arab, prompt, key: PREFIX + s.nomor + "-" + a.nomor + "-" + lang + ".json" });
+            tasks.push({ surah: s.nomor, ayat: a.nomor, lang, arab, prompt });
           }
           idx++;
         }
@@ -185,7 +199,6 @@ export default async function handler(req, res) {
       if (!aiRes.ok) {
         const err = await aiRes.text().catch(() => "");
         results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "error", error: err.slice(0,200) });
-        // Don't advance progress on error — will retry on next call
         await new Promise(r => setTimeout(r, 3000));
         continue;
       }
@@ -193,12 +206,17 @@ export default async function handler(req, res) {
       const aiData = await aiRes.json();
       const content = aiData.choices?.[0]?.message?.content || "";
 
-      // Save to Blob
+      // Save to Supabase
       try {
-        await put(task.key, JSON.stringify({
-          surah: task.surah, ayat: task.ayat, content, lang: task.lang,
-          updatedAt: new Date().toISOString(),
-        }), { access: "private", addRandomSuffix: false, allowOverwrite: true, token: BLOB_TOKEN });
+        const { error } = await supabase.from("analysis").upsert({
+          surah: task.surah,
+          ayat: task.ayat,
+          lang: task.lang,
+          content,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "surah,ayat,lang", ignoreDuplicates: false });
+
+        if (error) throw error;
         results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "ok" });
       } catch (e) {
         results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "save_error", error: e.message });
@@ -207,7 +225,7 @@ export default async function handler(req, res) {
       // Only advance progress on success
       progress.current++;
       await saveProgress(progress);
-      await new Promise(r => setTimeout(r, 1000)); // delay antar request
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     return res.status(200).json({

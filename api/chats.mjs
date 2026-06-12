@@ -1,81 +1,72 @@
 // /api/chats — GET shared chats for an ayat, POST new message
-import { put, get } from "@vercel/blob";
+import { createClient } from "@supabase/supabase-js";
 import { verifyJWT } from "./_auth.mjs";
 
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
-const PREFIX = "chats/";
-
-function chatKey(surah, ayat) {
-  return PREFIX + surah + "-" + ayat + ".json";
-}
-
-async function loadChats(surah, ayat) {
-  const key = chatKey(surah, ayat);
-  try {
-    const blob = await get(key, { access: "private", token: BLOB_TOKEN });
-    if (!blob) return { surah, ayat, messages: [] };
-    const chunks = [];
-    for await (const chunk of blob.stream) chunks.push(chunk);
-    return JSON.parse(Buffer.concat(chunks).toString("utf-8"));
-  } catch {
-    return { surah, ayat, messages: [] };
-  }
-}
-
-async function saveChats(surah, ayat, messages) {
-  const key = chatKey(surah, ayat);
-  await put(key, JSON.stringify({ surah, ayat, messages }), {
-    access: "private", addRandomSuffix: false, allowOverwrite: true, token: BLOB_TOKEN,
-  });
-}
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const TABLE = "chats";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
   if (req.method === "OPTIONS") return res.status(200).end();
+  if (!supabase) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
 
-  try {
-    if (req.method === "GET") {
-      const surah = parseInt(req.query?.surah, 10);
-      const ayat = parseInt(req.query?.ayat, 10);
-      if (!surah || !ayat) return res.status(400).json({ error: "Missing surah/ayat" });
+  const { surah, ayat } = req.query;
+  if (!surah || !ayat) return res.status(400).json({ error: "surah and ayat required" });
 
-      const data = await loadChats(surah, ayat);
-      return res.status(200).json({ ok: true, ...data });
+  // GET — load chat messages
+  if (req.method === "GET") {
+    try {
+      const { data, error } = await supabase
+        .from(TABLE)
+        .select("*")
+        .eq("surah", parseInt(surah))
+        .eq("ayat", parseInt(ayat))
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return res.status(200).json({ surah: parseInt(surah), ayat: parseInt(ayat), messages: data || [] });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
-
-    if (req.method === "POST") {
-      // Require auth
-      const auth = req.headers?.authorization || "";
-      const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-      const userPayload = verifyJWT(token);
-      if (!userPayload) return res.status(401).json({ error: "Login required" });
-
-      let body = {};
-      try { body = req.body || JSON.parse(req.body || "{}"); } catch {}
-      const { surah, ayat, content, role } = body;
-      if (!surah || !ayat || !content) return res.status(400).json({ error: "Missing surah/ayat/content" });
-
-      const data = await loadChats(surah, ayat);
-      const msg = {
-        id: "msg_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        userId: userPayload.sub,
-        email: role === "assistant" ? "AI" : userPayload.email,
-        role: role || "user",
-        content,
-        timestamp: new Date().toISOString(),
-      };
-      data.messages.push(msg);
-      await saveChats(surah, ayat, data.messages);
-
-      return res.status(200).json({ ok: true, message: msg });
-    }
-
-    return res.status(405).json({ error: "GET or POST only" });
-  } catch (err) {
-    console.error("chats error:", err);
-    return res.status(500).json({ error: err.message });
   }
+
+  // POST — add message
+  if (req.method === "POST") {
+    try {
+      const authHeader = req.headers.authorization;
+      let user = null;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        const payload = verifyJWT(token);
+        if (payload) user = payload.email || payload.sub || "user";
+      }
+
+      const { text } = req.body || {};
+      if (!text) return res.status(400).json({ error: "text required" });
+
+      const { data, error } = await supabase
+        .from(TABLE)
+        .insert({
+          surah: parseInt(surah),
+          ayat: parseInt(ayat),
+          author: user || "anonymous",
+          text,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return res.status(200).json({ ok: true, message: data });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  return res.status(405).json({ error: "Method not allowed" });
 }

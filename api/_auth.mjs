@@ -101,29 +101,32 @@ export async function createUser(email, name = "") {
 
 // ─── Signup with password ─────────────────────────
 // Helper: insert user with graceful column fallback
+// Strips unknown columns one by one until insert succeeds
 async function insertUser(user, extraFields = {}) {
-  const tryInsert = async (fields) => {
+  let fields = { ...extraFields };
+
+  while (true) {
     const payload = { ...user, ...fields };
-    return await supabase.from("users").insert(payload).select().single();
-  };
+    try {
+      const { data, error } = await supabase.from("users").insert(payload).select().single();
+      if (!error) return { data, error: null };
 
-  // Try with all fields first
-  let { data, error } = await tryInsert(extraFields).catch(() => ({ data: null, error: new Error("insert failed") }));
-
-  // Retry without problematic columns
-  if (error && error.message) {
-    const msg = error.message;
-    if (msg.includes("name")) {
-      const { name, ...rest } = extraFields;
-      return await tryInsert(rest);
-    }
-    if (msg.includes("password_hash")) {
-      const { password_hash, ...rest } = extraFields;
-      return await tryInsert(rest);
+      const msg = error.message || "";
+      // If column doesn't exist, strip it and retry
+      if (msg.includes("name")) {
+        delete fields.name;
+        continue;
+      }
+      if (msg.includes("password_hash")) {
+        delete fields.password_hash;
+        continue;
+      }
+      // Unknown error — propagate
+      return { data, error };
+    } catch (e) {
+      return { data: null, error: e };
     }
   }
-
-  return { data, error };
 }
 
 export async function signupUser(email, password, name = "") {

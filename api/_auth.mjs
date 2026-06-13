@@ -209,6 +209,26 @@ export async function saveUserPrefs(email, prefs) {
   return data;
 }
 
+// ─── Auto Migration ───────────────────────────────
+// Runs once on first deploy to add missing columns
+let migrationDone = false;
+
+export async function runMigration() {
+  if (migrationDone || !supabase) return;
+  migrationDone = true;
+  try {
+    // Try adding name column (safe if already exists)
+    await supabase.rpc("exec_sql", {
+      sql: "ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT DEFAULT ''",
+    });
+  } catch { /* column may already exist, or rpc not available */ }
+  try {
+    await supabase.rpc("exec_sql", {
+      sql: "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT ''",
+    });
+  } catch {}
+}
+
 // ─── Magic Link Helpers ───────────────────────────
 export async function storeMagicLink(email) {
   if (!supabase) throw new Error("Database not configured");

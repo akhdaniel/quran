@@ -1,7 +1,8 @@
 // GET /api/auth/verify?token=xxx — verify magic link, create/login user, return JWT
-import { createJWT, getUser, createUser, consumeMagicLink } from "../_auth.mjs";
+import { createJWT, getUser, createUser, consumeMagicLink, runMigration } from "../_auth.mjs";
 
 export default async function handler(req, res) {
+  await runMigration();
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");

@@ -1,7 +1,8 @@
 // POST /api/auth/register — sign up with email, password, name
-import { createJWT, signupUser } from "../_auth.mjs";
+import { createJWT, signupUser, runMigration } from "../_auth.mjs";
 
 export default async function handler(req, res) {
+  await runMigration();
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");

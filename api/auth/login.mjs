@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
+        name: user.name || (user.preferences && user.preferences._name) || "",
         preferences: user.preferences,
       },
     });

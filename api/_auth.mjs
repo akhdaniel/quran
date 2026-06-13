@@ -101,32 +101,50 @@ export async function createUser(email, name = "") {
 
 // ─── Signup with password ─────────────────────────
 // Helper: insert user with graceful column fallback
-// Strips unknown columns one by one until insert succeeds
+// For columns that don't exist yet, store them in preferences JSONB
 async function insertUser(user, extraFields = {}) {
   let fields = { ...extraFields };
+  let prefsExtras = {}; // Stuff to store in preferences JSONB
 
   while (true) {
     const payload = { ...user, ...fields };
+    // Merge extras into preferences
+    if (Object.keys(prefsExtras).length > 0) {
+      payload.preferences = { ...user.preferences, ...prefsExtras };
+    }
     try {
       const { data, error } = await supabase.from("users").insert(payload).select().single();
       if (!error) return { data, error: null };
 
       const msg = error.message || "";
-      // If column doesn't exist, strip it and retry
       if (msg.includes("name")) {
+        if (fields.name) { prefsExtras._name = fields.name; }
         delete fields.name;
         continue;
       }
       if (msg.includes("password_hash")) {
+        if (fields.password_hash) { prefsExtras._password_hash = fields.password_hash; }
         delete fields.password_hash;
         continue;
       }
-      // Unknown error — propagate
       return { data, error };
     } catch (e) {
       return { data: null, error: e };
     }
   }
+}
+
+// Read name from either column or preferences JSONB
+function getUserDisplayName(user) {
+  if (user.name) return user.name;
+  if (user.preferences && user.preferences._name) return user.preferences._name;
+  return "";
+}
+
+function getUserPasswordHash(user) {
+  if (user.password_hash) return user.password_hash;
+  if (user.preferences && user.preferences._password_hash) return user.preferences._password_hash;
+  return "";
 }
 
 export async function signupUser(email, password, name = "") {
@@ -160,9 +178,10 @@ export async function loginUser(email, password) {
   if (!user) throw new Error("User not found");
 
   // If no password_hash set (magic link user), prompt to set password
-  if (!user.password_hash) throw new Error("Set password first");
+  const pwhash = getUserPasswordHash(user);
+  if (!pwhash) throw new Error("Set password first");
 
-  if (!verifyPassword(password, user.password_hash)) {
+  if (!verifyPassword(password, pwhash)) {
     throw new Error("Wrong password");
   }
 
@@ -174,12 +193,29 @@ export async function setUserPassword(email, password) {
   if (!supabase) throw new Error("Database not configured");
   const password_hash = hashPassword(password);
 
+  // Try updating password_hash column; fall back to preferences JSONB
   const { data, error } = await supabase
     .from("users")
     .update({ password_hash })
     .eq("email", email.toLowerCase().trim())
     .select()
-    .single();
+    .single()
+    .catch(async () => {
+      // password_hash column doesn't exist — store in preferences
+      const { data: user } = await supabase
+        .from("users")
+        .select("preferences")
+        .eq("email", email.toLowerCase().trim())
+        .single();
+      if (!user) throw new Error("User not found");
+      const prefs = { ...user.preferences, _password_hash: password_hash };
+      return await supabase
+        .from("users")
+        .update({ preferences: prefs })
+        .eq("email", email.toLowerCase().trim())
+        .select()
+        .single();
+    });
 
   if (error) throw error;
   return data;

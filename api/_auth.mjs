@@ -84,8 +84,6 @@ export async function createUser(email, name = "") {
   const user = {
     id: "user_" + randomUUID().slice(0, 8),
     email: email.toLowerCase().trim(),
-    name: name.trim() || email.split("@")[0],
-    password_hash: "",
     preferences: {
       qari: "",
       theme: "dark",
@@ -93,11 +91,22 @@ export async function createUser(email, name = "") {
     },
   };
 
-  const { data, error } = await supabase
-    .from("users")
-    .insert(user)
-    .select()
-    .single();
+  // Try inserting with name first, fall back without
+  const tryInsert = async (withName) => {
+    if (withName && name) {
+      user.name = name.trim() || email.split("@")[0];
+    }
+    return await supabase.from("users").insert(user).select().single();
+  };
+
+  let { data, error } = await tryInsert(true).catch(() => ({ data: null, error: new Error("insert failed") }));
+  if (error && error.message && error.message.includes("name")) {
+    // name column doesn't exist yet — retry without
+    delete user.name;
+    const result = await tryInsert(false);
+    data = result.data;
+    error = result.error;
+  }
 
   if (error) throw error;
   return data;
@@ -115,7 +124,6 @@ export async function signupUser(email, password, name = "") {
   const user = {
     id: "user_" + randomUUID().slice(0, 8),
     email: email.toLowerCase().trim(),
-    name: name.trim() || email.split("@")[0],
     password_hash,
     preferences: {
       qari: "",
@@ -124,11 +132,21 @@ export async function signupUser(email, password, name = "") {
     },
   };
 
-  const { data, error } = await supabase
-    .from("users")
-    .insert(user)
-    .select()
-    .single();
+  // Try inserting with name first, fall back without
+  const tryInsert = async (withName) => {
+    if (withName && name) {
+      user.name = name.trim() || email.split("@")[0];
+    }
+    return await supabase.from("users").insert(user).select().single();
+  };
+
+  let { data, error } = await tryInsert(true).catch(() => ({ data: null, error: new Error("insert failed") }));
+  if (error && error.message && error.message.includes("name")) {
+    delete user.name;
+    const result = await tryInsert(false);
+    data = result.data;
+    error = result.error;
+  }
 
   if (error) throw error;
   return data;
@@ -214,19 +232,39 @@ export async function saveUserPrefs(email, prefs) {
 let migrationDone = false;
 
 export async function runMigration() {
-  if (migrationDone || !supabase) return;
+  if (migrationDone || !supabase || !supabaseUrl) return;
   migrationDone = true;
+
+  // Try via management API (project.supabase.co/rest/v1/)
+  const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!apiKey) return;
+
+  const projectRef = supabaseUrl.replace(/^https?:\/\//, "").replace(/\.supabase\.co.*$/, "");
+  const mgmtUrl = `https://api.supabase.com/v1/projects/${projectRef}/sql`;
+
+  const sql = `
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT '';
+  `.trim();
+
   try {
-    // Try adding name column (safe if already exists)
-    await supabase.rpc("exec_sql", {
-      sql: "ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT DEFAULT ''",
+    const res = await fetch(mgmtUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: sql }),
     });
-  } catch { /* column may already exist, or rpc not available */ }
-  try {
-    await supabase.rpc("exec_sql", {
-      sql: "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT DEFAULT ''",
-    });
-  } catch {}
+    if (res.ok) {
+      console.log("Migration: columns added successfully");
+    } else {
+      const text = await res.text().catch(() => "");
+      console.log("Migration mgmt API failed:", res.status, text.slice(0, 200));
+    }
+  } catch (e) {
+    console.log("Migration error:", e.message);
+  }
 }
 
 // ─── Magic Link Helpers ───────────────────────────

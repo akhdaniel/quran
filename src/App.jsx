@@ -192,10 +192,23 @@ function App() {
     return stored ? JSON.parse(stored) : null;
   });
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginMode, setLoginMode] = useState("login"); // "login" | "signup"
   const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupName, setSignupName] = useState("");
   const [loginSending, setLoginSending] = useState(false);
   const [loginSent, setLoginSent] = useState(false);
   const [loginError, setLoginError] = useState("");
+
+  function resetAuthForm() {
+    setLoginMode("login");
+    setLoginEmail("");
+    setLoginPassword("");
+    setSignupName("");
+    setLoginSending(false);
+    setLoginSent(false);
+    setLoginError("");
+  }
 
   // Save auth to localStorage
   useEffect(() => {
@@ -300,6 +313,67 @@ function App() {
           setLoginSent(true);
         } else {
           setLoginError(data.error || "Failed to send");
+        }
+      })
+      .catch(() => setLoginError("Network error"))
+      .finally(() => setLoginSending(false));
+  }
+
+  function handleSignup() {
+    if (!loginEmail.trim() || !loginEmail.includes("@")) return;
+    if (!loginPassword || loginPassword.length < 6) {
+      setLoginError("Password minimal 6 karakter");
+      return;
+    }
+    setLoginSending(true);
+    setLoginError("");
+    fetch(API_BASE + "/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: loginEmail.trim(),
+        password: loginPassword,
+        name: signupName.trim(),
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.token) {
+          setAuthToken(data.token);
+          setAuthUser(data.user);
+          setShowLoginModal(false);
+          resetAuthForm();
+        } else {
+          setLoginError(data.error || "Signup failed");
+        }
+      })
+      .catch(() => setLoginError("Network error"))
+      .finally(() => setLoginSending(false));
+  }
+
+  function handleLoginWithPassword() {
+    if (!loginEmail.trim() || !loginPassword) return;
+    setLoginSending(true);
+    setLoginError("");
+    fetch(API_BASE + "/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.token) {
+          setAuthToken(data.token);
+          setAuthUser(data.user);
+          setShowLoginModal(false);
+          resetAuthForm();
+        } else if (data.needsPasswordSetup) {
+          setLoginError("Akun ini pakai magic link. Gunakan 'Login via Email' atau set password dulu.");
+        } else {
+          setLoginError(data.error || "Login failed");
         }
       })
       .catch(() => setLoginError("Network error"))
@@ -934,7 +1008,7 @@ function App() {
           onClick={() => authUser ? setShowSettings(!showSettings) : setShowLoginModal(true)}
           title={authUser ? (lang === "id" ? "Pengaturan" : "Settings") : (lang === "id" ? "Masuk" : "Login")}
         >
-          {authUser ? "⚙" : "🔑"}
+          {authUser ? (authUser.name ? authUser.name.charAt(0).toUpperCase() : "⚙") : "🔑"}
         </button>
       </header>
 
@@ -945,7 +1019,8 @@ function App() {
             {authUser && (
               <div className="settings-section" style={{borderBottom:"1px solid #333",paddingBottom:"8px",marginBottom:"8px"}}>
                 <div style={{color:"#888",fontSize:"12px"}}>{lang === "id" ? "Masuk sebagai" : "Logged in as"}</div>
-                <div style={{color:"#c9a96e",fontSize:"14px",marginBottom:"8px"}}>{authUser.email}</div>
+                <div style={{color:"#c9a96e",fontSize:"16px",fontWeight:"bold"}}>{authUser.name || authUser.email.split('@')[0]}</div>
+                <div style={{color:"#888",fontSize:"12px",marginBottom:"8px"}}>{authUser.email}</div>
                 <button className="modal-cancel" onClick={handleLogout} style={{fontSize:"12px",padding:"4px 12px"}}>
                   {lang === "id" ? "Keluar" : "Logout"}
                 </button>
@@ -1386,41 +1461,130 @@ function App() {
       )}
       {/* Login Modal */}
       {showLoginModal && (
-        <div className="modal-overlay" onClick={() => { setShowLoginModal(false); setLoginSent(false); setLoginError(""); }}>
+        <div className="modal-overlay" onClick={() => { setShowLoginModal(false); resetAuthForm(); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">{lang === "id" ? "Masuk ke Quran AI" : "Login to Quran AI"}</h3>
-            {!loginSent ? (
+            {/* ─── Tabs ─── */}
+            <div style={{display:"flex",marginBottom:"16px",borderBottom:"1px solid #333"}}>
+              <button
+                onClick={() => { setLoginMode("login"); setLoginError(""); }}
+                style={{
+                  flex:1, padding:"8px 16px", background:"none", border:"none", cursor:"pointer",
+                  color: loginMode === "login" ? "#c9a96e" : "#666",
+                  borderBottom: loginMode === "login" ? "2px solid #c9a96e" : "2px solid transparent",
+                  fontWeight: loginMode === "login" ? "bold" : "normal",
+                  fontSize:"14px",
+                }}
+              >{lang === "id" ? "Masuk" : "Login"}</button>
+              <button
+                onClick={() => { setLoginMode("signup"); setLoginError(""); }}
+                style={{
+                  flex:1, padding:"8px 16px", background:"none", border:"none", cursor:"pointer",
+                  color: loginMode === "signup" ? "#c9a96e" : "#666",
+                  borderBottom: loginMode === "signup" ? "2px solid #c9a96e" : "2px solid transparent",
+                  fontWeight: loginMode === "signup" ? "bold" : "normal",
+                  fontSize:"14px",
+                }}
+              >{lang === "id" ? "Daftar" : "Sign Up"}</button>
+            </div>
+
+            {loginMode === "login" && (
               <>
+                <h3 className="modal-title" style={{marginTop:0}}>{lang === "id" ? "Masuk" : "Login"}</h3>
+
+                {/* Password login */}
                 <p className="modal-hint">{lang === "id"
-                  ? "Masukkan email Anda untuk menerima tautan masuk."
-                  : "Enter your email to receive a login link."}</p>
+                  ? "Masuk dengan email dan password"
+                  : "Sign in with email and password"}</p>
                 <input
                   className="modal-input"
                   type="email"
-                  placeholder={lang === "id" ? "Email Anda" : "Your email"}
+                  placeholder={lang === "id" ? "Email" : "Email"}
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleLoginSend()}
                   autoFocus
+                />
+                <input
+                  className="modal-input"
+                  type="password"
+                  placeholder="Password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLoginWithPassword()}
+                  style={{marginTop:"8px"}}
                 />
                 {loginError && <p style={{ color: "#ef4444", fontSize: "13px", margin: "4px 0" }}>{loginError}</p>}
                 <div className="modal-actions">
-                  <button className="modal-cancel" onClick={() => { setShowLoginModal(false); setLoginError(""); }}>
+                  <button className="modal-cancel" onClick={() => { setShowLoginModal(false); resetAuthForm(); }}>
                     {lang === "id" ? "Batal" : "Cancel"}
                   </button>
-                  <button className="modal-save" onClick={handleLoginSend} disabled={loginSending || !loginEmail.trim()}>
-                    {loginSending ? (lang === "id" ? "Mengirim..." : "Sending...") : (lang === "id" ? "Kirim Tautan" : "Send Link")}
+                  <button className="modal-save" onClick={handleLoginWithPassword} disabled={loginSending || !loginEmail.trim() || !loginPassword}>
+                    {loginSending ? (lang === "id" ? "Memproses..." : "Loading...") : (lang === "id" ? "Masuk" : "Login")}
                   </button>
                 </div>
+
+                <div style={{textAlign:"center",marginTop:"16px",borderTop:"1px solid #333",paddingTop:"12px"}}>
+                  <button
+                    onClick={() => {
+                      if (!loginEmail.trim() || !loginEmail.includes("@")) {
+                        setLoginError(lang === "id" ? "Masukkan email dulu" : "Enter your email first");
+                        return;
+                      }
+                      handleLoginSend();
+                    }}
+                    style={{background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:"13px",textDecoration:"underline"}}
+                  >{lang === "id" ? "Kirim tautan magic link ke email" : "Send magic link to email"}</button>
+                </div>
+
+                {loginSent && (
+                  <div style={{background:"#1a3a1a",border:"1px solid #2a5a2a",borderRadius:"8px",padding:"12px",marginTop:"12px"}}>
+                    <p style={{color:"#4caf50",fontSize:"13px",margin:0}}>
+                      {lang === "id"
+                        ? "✅ Tautan masuk sudah dikirim. Cek inbox/spam email Anda."
+                        : "✅ Login link sent. Check your inbox/spam."}
+                    </p>
+                  </div>
+                )}
               </>
-            ) : (
+            )}
+
+            {loginMode === "signup" && (
               <>
+                <h3 className="modal-title" style={{marginTop:0}}>{lang === "id" ? "Buat Akun Baru" : "Create Account"}</h3>
                 <p className="modal-hint">{lang === "id"
-                  ? "Tautan masuk sudah dikirim ke email Anda. Cek inbox/spam."
-                  : "Login link sent to your email. Check inbox/spam."}</p>
+                  ? "Daftar dengan email dan password"
+                  : "Sign up with email and password"}</p>
+                <input
+                  className="modal-input"
+                  type="text"
+                  placeholder={lang === "id" ? "Nama (opsional)" : "Name (optional)"}
+                  value={signupName}
+                  onChange={(e) => setSignupName(e.target.value)}
+                  autoFocus
+                />
+                <input
+                  className="modal-input"
+                  type="email"
+                  placeholder={lang === "id" ? "Email" : "Email"}
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  style={{marginTop:"8px"}}
+                />
+                <input
+                  className="modal-input"
+                  type="password"
+                  placeholder="Password (min. 6 karakter)"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSignup()}
+                  style={{marginTop:"8px"}}
+                />
+                {loginError && <p style={{ color: "#ef4444", fontSize: "13px", margin: "4px 0" }}>{loginError}</p>}
                 <div className="modal-actions">
-                  <button className="modal-save" onClick={() => { setShowLoginModal(false); setLoginSent(false); setLoginEmail(""); }}>
-                    {lang === "id" ? "Tutup" : "Close"}
+                  <button className="modal-cancel" onClick={() => { setShowLoginModal(false); resetAuthForm(); }}>
+                    {lang === "id" ? "Batal" : "Cancel"}
+                  </button>
+                  <button className="modal-save" onClick={handleSignup} disabled={loginSending || !loginEmail.trim() || !loginPassword || loginPassword.length < 6}>
+                    {loginSending ? (lang === "id" ? "Mendaftar..." : "Signing up...") : (lang === "id" ? "Daftar" : "Sign Up")}
                   </button>
                 </div>
               </>

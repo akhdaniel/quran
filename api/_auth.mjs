@@ -1,12 +1,12 @@
 // Shared auth helpers — JWT + Supabase user storage
-import { createHmac, randomUUID } from "crypto";
+import { createHmac, randomUUID, randomBytes, timingSafeEqual } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
-// Signing secret: SMTP2GO key used as HMAC secret
+// ─── HMAC JWT ─────────────────────────────────────
 function getSecret() {
   return process.env.SMTP2GO_API_KEY || process.env.VITE_DEEPSEEK_API_KEY || "dev-secret";
 }
@@ -34,7 +34,25 @@ export function verifyJWT(token) {
   } catch { return null; }
 }
 
-// User helpers via Supabase
+// ─── Password Hashing (SHA-256 + salt) ────────────
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = createHmac("sha256", salt).update(password).digest("hex");
+  return salt + ":" + hash;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const computed = createHmac("sha256", salt).update(password).digest("hex");
+  try {
+    return timingSafeEqual(Buffer.from(computed), Buffer.from(hash));
+  } catch {
+    return false;
+  }
+}
+
+// ─── User Helpers ─────────────────────────────────
 export async function getUser(email) {
   if (!supabase) return null;
   try {
@@ -48,11 +66,26 @@ export async function getUser(email) {
   } catch { return null; }
 }
 
-export async function createUser(email) {
+export async function getUserById(id) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return null;
+    return data;
+  } catch { return null; }
+}
+
+export async function createUser(email, name = "") {
   if (!supabase) throw new Error("Database not configured");
   const user = {
     id: "user_" + randomUUID().slice(0, 8),
     email: email.toLowerCase().trim(),
+    name: name.trim() || email.split("@")[0],
+    password_hash: "",
     preferences: {
       qari: "",
       theme: "dark",
@@ -70,9 +103,91 @@ export async function createUser(email) {
   return data;
 }
 
+// ─── Signup with password ─────────────────────────
+export async function signupUser(email, password, name = "") {
+  if (!supabase) throw new Error("Database not configured");
+
+  // Check if user already exists
+  const existing = await getUser(email);
+  if (existing) throw new Error("Email already registered");
+
+  const password_hash = hashPassword(password);
+  const user = {
+    id: "user_" + randomUUID().slice(0, 8),
+    email: email.toLowerCase().trim(),
+    name: name.trim() || email.split("@")[0],
+    password_hash,
+    preferences: {
+      qari: "",
+      theme: "dark",
+      lastRead: { surah: 1, ayat: 1 },
+    },
+  };
+
+  const { data, error } = await supabase
+    .from("users")
+    .insert(user)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ─── Login with password ──────────────────────────
+export async function loginUser(email, password) {
+  const user = await getUser(email);
+  if (!user) throw new Error("User not found");
+
+  // If no password_hash set (magic link user), prompt to set password
+  if (!user.password_hash) throw new Error("Set password first");
+
+  if (!verifyPassword(password, user.password_hash)) {
+    throw new Error("Wrong password");
+  }
+
+  return user;
+}
+
+// ─── Set password for existing magic-link users ───
+export async function setUserPassword(email, password) {
+  if (!supabase) throw new Error("Database not configured");
+  const password_hash = hashPassword(password);
+
+  const { data, error } = await supabase
+    .from("users")
+    .update({ password_hash })
+    .eq("email", email.toLowerCase().trim())
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ─── Update user profile ──────────────────────────
+export async function updateUserProfile(email, updates) {
+  if (!supabase) throw new Error("Database not configured");
+
+  const allowed = {};
+  if (updates.name !== undefined) allowed.name = updates.name.trim();
+
+  if (Object.keys(allowed).length === 0) return null;
+
+  const { data, error } = await supabase
+    .from("users")
+    .update(allowed)
+    .eq("email", email.toLowerCase().trim())
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ─── Preferences ──────────────────────────────────
 export async function saveUserPrefs(email, prefs) {
   if (!supabase) throw new Error("Database not configured");
-  // Get current prefs first
   const { data: user, error: getErr } = await supabase
     .from("users")
     .select("preferences")
@@ -94,7 +209,7 @@ export async function saveUserPrefs(email, prefs) {
   return data;
 }
 
-// Magic link helpers via Supabase
+// ─── Magic Link Helpers ───────────────────────────
 export async function storeMagicLink(email) {
   if (!supabase) throw new Error("Database not configured");
   const token = randomUUID();
@@ -123,10 +238,8 @@ export async function consumeMagicLink(token) {
 
     if (error) return null;
 
-    // Check expiry
     if (new Date(data.expires_at) < new Date()) return null;
 
-    // Mark as consumed (one-time use)
     await supabase
       .from("magic_links")
       .update({ consumed: true })

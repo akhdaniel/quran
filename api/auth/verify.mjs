@@ -27,11 +27,12 @@ export default async function handler(req, res) {
       isNew = true;
     }
 
-    // Generate JWT (7 days expiry)
+    // Generate JWT (30 days expiry)
     const jwt = createJWT({
       sub: user.id,
       email: user.email,
-      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+      name: user.name || "",
+      exp: Math.floor(Date.now() / 1000) + 30 * 24 * 3600,
     });
 
     return res.status(200).json({
@@ -41,6 +42,7 @@ export default async function handler(req, res) {
       user: {
         id: user.id,
         email: user.email,
+        name: user.name || "",
         preferences: user.preferences,
       },
     });

@@ -91,32 +91,44 @@ export async function createUser(email, name = "") {
     },
   };
 
-  // Try inserting with name first, fall back without
-  const tryInsert = async (withName) => {
-    if (withName && name) {
-      user.name = name.trim() || email.split("@")[0];
-    }
-    return await supabase.from("users").insert(user).select().single();
-  };
+  const extra = {};
+  if (name) extra.name = name.trim() || email.split("@")[0];
 
-  let { data, error } = await tryInsert(true).catch(() => ({ data: null, error: new Error("insert failed") }));
-  if (error && error.message && error.message.includes("name")) {
-    // name column doesn't exist yet — retry without
-    delete user.name;
-    const result = await tryInsert(false);
-    data = result.data;
-    error = result.error;
-  }
-
+  const { data, error } = await insertUser(user, extra);
   if (error) throw error;
   return data;
 }
 
 // ─── Signup with password ─────────────────────────
+// Helper: insert user with graceful column fallback
+async function insertUser(user, extraFields = {}) {
+  const tryInsert = async (fields) => {
+    const payload = { ...user, ...fields };
+    return await supabase.from("users").insert(payload).select().single();
+  };
+
+  // Try with all fields first
+  let { data, error } = await tryInsert(extraFields).catch(() => ({ data: null, error: new Error("insert failed") }));
+
+  // Retry without problematic columns
+  if (error && error.message) {
+    const msg = error.message;
+    if (msg.includes("name")) {
+      const { name, ...rest } = extraFields;
+      return await tryInsert(rest);
+    }
+    if (msg.includes("password_hash")) {
+      const { password_hash, ...rest } = extraFields;
+      return await tryInsert(rest);
+    }
+  }
+
+  return { data, error };
+}
+
 export async function signupUser(email, password, name = "") {
   if (!supabase) throw new Error("Database not configured");
 
-  // Check if user already exists
   const existing = await getUser(email);
   if (existing) throw new Error("Email already registered");
 
@@ -124,7 +136,6 @@ export async function signupUser(email, password, name = "") {
   const user = {
     id: "user_" + randomUUID().slice(0, 8),
     email: email.toLowerCase().trim(),
-    password_hash,
     preferences: {
       qari: "",
       theme: "dark",
@@ -132,22 +143,10 @@ export async function signupUser(email, password, name = "") {
     },
   };
 
-  // Try inserting with name first, fall back without
-  const tryInsert = async (withName) => {
-    if (withName && name) {
-      user.name = name.trim() || email.split("@")[0];
-    }
-    return await supabase.from("users").insert(user).select().single();
-  };
+  const extra = { password_hash };
+  if (name) extra.name = name.trim() || email.split("@")[0];
 
-  let { data, error } = await tryInsert(true).catch(() => ({ data: null, error: new Error("insert failed") }));
-  if (error && error.message && error.message.includes("name")) {
-    delete user.name;
-    const result = await tryInsert(false);
-    data = result.data;
-    error = result.error;
-  }
-
+  const { data, error } = await insertUser(user, extra);
   if (error) throw error;
   return data;
 }

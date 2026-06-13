@@ -31,3 +31,4 @@ npm run build
 Hasil build di folder `dist/`.
 
 Deploy: Sun May 31 08:35:31 PM CST 2026
+# trigger

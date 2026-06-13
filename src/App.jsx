@@ -1081,7 +1081,7 @@ function App() {
             {verses.map((v, i) => {
               const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
               const cleanWords = words.filter(function(w) { return cleanWord(w).length > 0; });
-              const first = cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "";
+              const first = cleanWords.length > 0 ? cleanWords.slice(0, 2).map(cleanWord).join(' ') : "";
               const last = cleanWords.length > 1 ? cleanWord(cleanWords[cleanWords.length - 1]) : (cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "");
               return (
                 <option key={i} value={i + 1}>
@@ -1302,7 +1302,7 @@ function App() {
             {verses.map((v, i) => {
               const words = v.teksArab?.split(/\s+/).filter(Boolean) || [];
               const cleanWords = words.filter(function(w) { return cleanWord(w).length > 0; });
-              const first = cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "";
+              const first = cleanWords.length > 0 ? cleanWords.slice(0, 2).map(cleanWord).join(' ') : "";
               const last = cleanWords.length > 1 ? cleanWord(cleanWords[cleanWords.length - 1]) : (cleanWords.length > 0 ? cleanWord(cleanWords[0]) : "");
               return (
                 <option key={i} value={i + 1}>

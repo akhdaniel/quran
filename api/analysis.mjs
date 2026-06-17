@@ -1,9 +1,5 @@
-// API /api/analysis — simpan & baca analisa ayat via Supabase
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// API /api/analysis — simpan & baca analisa ayat via PostgREST on-premise
+const PGREST_URL = "http://124.156.205.118";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
@@ -15,18 +11,24 @@ export default async function handler(req, res) {
 
   // Health check (GET tanpa params)
   if (req.method === "GET" && !req.query.surah) {
-    return res.status(200).json({
-      status: "alive",
-      db_connected: !!supabase,
-      node: process.version,
-    });
+    try {
+      const resp = await fetch(PGREST_URL + "/analysis?select=count");
+      const data = await resp.json();
+      return res.status(200).json({
+        status: "alive",
+        total: data[0]?.count || 0,
+        node: process.version,
+      });
+    } catch (err) {
+      return res.status(200).json({
+        status: "alive",
+        pgrst_connected: false,
+        node: process.version,
+      });
+    }
   }
 
-  if (!supabase) {
-    return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
-  }
-
-  // POST — simpan
+  // POST — simpan (upsert by surah+ayat+lang)
   if (req.method === "POST") {
     const { surah, ayat, content, lang } = req.body || {};
     if (!surah || !ayat || !content) {
@@ -34,26 +36,34 @@ export default async function handler(req, res) {
     }
 
     try {
-      const { error } = await supabase.from("analysis").upsert({
-        surah: parseInt(surah),
-        ayat: parseInt(ayat),
-        lang: lang || "id",
-        content,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: "surah,ayat,lang",
-        ignoreDuplicates: false,
+      const resp = await fetch(PGRST_URL + "/analysis", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Prefer": "resolution=merge-duplicates",
+        },
+        body: JSON.stringify({
+          surah: parseInt(surah),
+          ayat: parseInt(ayat),
+          lang: lang || "id",
+          content,
+          updated_at: new Date().toISOString(),
+        }),
       });
 
-      if (error) throw error;
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(errText);
+      }
+
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error("SUPABASE upsert error:", err);
+      console.error("PostgREST upsert error:", err);
       return res.status(500).json({ error: "POST: " + err.message });
     }
   }
 
-  // GET — ambil
+  // GET — ambil analysis
   if (req.method === "GET") {
     const { surah, ayat, lang } = req.query;
     if (!surah || !ayat) {
@@ -61,27 +71,28 @@ export default async function handler(req, res) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("analysis")
-        .select("content, updated_at")
-        .eq("surah", parseInt(surah))
-        .eq("ayat", parseInt(ayat))
-        .eq("lang", lang || "id")
-        .single();
+      const params = new URLSearchParams({
+        "surah": `eq.${parseInt(surah)}`,
+        "ayat": `eq.${parseInt(ayat)}`,
+        "lang": `eq.${lang || "id"}`,
+        "select": "content,updated_at",
+      });
 
-      if (error) {
-        if (error.code === "PGRST116") {
-          return res.status(404).json({ error: "not found" });
-        }
-        throw error;
+      const resp = await fetch(PGRST_URL + "/analysis?" + params.toString());
+      if (!resp.ok) throw new Error(await resp.text());
+
+      const data = await resp.json();
+
+      if (!data || data.length === 0) {
+        return res.status(404).json({ error: "not found" });
       }
 
       return res.status(200).json({
         surah: parseInt(surah),
         ayat: parseInt(ayat),
         lang: lang || "id",
-        content: data.content,
-        updatedAt: data.updated_at,
+        content: data[0].content,
+        updatedAt: data[0].updated_at,
       });
     } catch (err) {
       return res.status(500).json({ error: "GET: " + err.message });

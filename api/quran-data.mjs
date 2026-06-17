@@ -1,9 +1,5 @@
-// GET /api/quran-data — serve full Quran data from Supabase
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// GET /api/quran-data — serve full Quran data from PostgREST
+const PGREST_URL = "http://124.156.205.118";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
@@ -14,25 +10,16 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  if (!supabase) {
-    return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
-  }
-
   try {
-    const { data, error } = await supabase
-      .from("quran_data")
-      .select("data")
-      .eq("key", "full")
-      .single();
+    const resp = await fetch(`${PGREST_URL}/quran_data?key=eq.full&select=data`);
+    if (!resp.ok) throw new Error(await resp.text());
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        return res.status(404).json({ error: "Data not found. Run POST /api/sync-quran first." });
-      }
-      throw error;
+    const rows = await resp.json();
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: "Data not found." });
     }
 
-    return res.status(200).json(data.data);
+    return res.status(200).json(rows[0].data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

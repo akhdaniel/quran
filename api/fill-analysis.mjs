@@ -1,12 +1,7 @@
-// POST /api/fill-analysis — generate analysis untuk ayat yang belum ada
-// Proses 1 ayat per panggilan (BATCH=1 biar gak timeout di Vercel)
-import { createClient } from "@supabase/supabase-js";
-
+// POST /api/fill-analysis — generate analysis untuk ayat yang belum ada via PostgREST
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const PGREST_URL = "http://124.156.205.118";
 
 const BATCH = 1; // 1 ayat per panggilan biar cepet
 const PROGRESS_KEY = "analysis_progress";
@@ -45,178 +40,203 @@ const PROMPT_EN = `Analyze the following Qur'anic verse deeply and in a structur
 4. **Brief Tafsir** — concise explanation from at least 3 of these tafsir sources: Ibn Kathir, As-Sa'di, Al-Muyassar/Al-Munir, Al-Qurtubi, At-Tabari, Sayyid Qutb
 5. **Asbabun Nuzul (Occasion of Revelation)** — the authentic reasons/context for this verse's revelation, if known. If no specific narration exists, state that the verse was revealed without a specific occasion (ghairu sababin nuzul) and still provide its historical context`;
 
-async function loadQuranData() {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from("quran_data")
-    .select("data")
-    .eq("key", "full")
-    .single();
-  if (error) return null;
-  return data.data;
+// ─── Helper: PostgREST fetch ────────────────────────
+async function pgrst(path, options = {}) {
+  const url = PGREST_URL + path;
+  const resp = await fetch(url, {
+    headers: { "Content-Type": "application/json", "Accept": "application/json", ...options.headers },
+    ...options,
+  });
+  if (!resp.ok) throw new Error(`PostgREST ${resp.status}: ${await resp.text()}`);
+  return resp;
 }
 
-async function loadProgress() {
-  if (!supabase) return { current: 0, total: 0 };
-  try {
-    const { data, error } = await supabase
-      .from("quran_data")
-      .select("data")
-      .eq("key", PROGRESS_KEY)
-      .single();
-    if (error) return { current: 0, total: 0 };
-    return data.data;
-  } catch {
-    return { current: 0, total: 0 };
+// ─── Helper: tanya DeepSeek ─────────────────────────
+async function askDeepSeek(prompt) {
+  if (!DEEPSEEK_KEY) throw new Error("VITE_DEEPSEEK_API_KEY not set");
+  const resp = await fetch(DEEPSEEK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${DEEPSEEK_KEY}` },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 8192,
+    }),
+  });
+  if (!resp.ok) throw new Error(`DeepSeek ${resp.status}: ${await resp.text()}`);
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+// ─── Helper: get Quran data ─────────────────────────
+async function getQuranData() {
+  const resp = await pgrst("/quran_data?key=eq.full&select=data");
+  const rows = await resp.json();
+  if (!rows?.[0]?.data?.surahs) throw new Error("Quran data not found");
+  return rows[0].data;
+}
+
+function buildTasks(surahs, progress) {
+  const tasks = [];
+  const langs = ["id", "en"];
+  const progressArr = progress?.completed?.[0] || [];
+
+  for (const surah of surahs) {
+    for (const ayah of surah.ayat) {
+      for (const lang of langs) {
+        const done = progressArr.some(
+          (p) => p.surah === surah.nomor && p.ayat === ayah.nomor && p.lang === lang
+        );
+        if (!done) {
+          tasks.push({
+            surah: surah.nomor,
+            ayat: ayah.nomor,
+            lang,
+            ayah,
+            surahName: surah.nama_latin || surah.nama,
+          });
+        }
+      }
+    }
   }
+  return tasks;
+}
+
+function buildPrompt(task, surah) {
+  const isID = task.lang === "id";
+  const promptTemplate = isID ? PROMPT_ID : PROMPT_EN;
+  const surahInfo =
+    task.lang === "id"
+      ? `Surah ${surah.nama_latin} (${surah.arti}), Ayat ${task.ayat}\n\n`
+      : `Surah ${surah.nama_latin} (${surah.nama}), Verse ${task.ayat}\n\n`;
+  const arab = task.ayah.teksArab;
+  const translation = isID ? task.ayah.teksIndonesia : task.ayah.teksInggris;
+  const latinSegment = task.ayah.teksLatin ? `**Latin:** ${task.ayah.teksLatin}\n\n` : "";
+  return promptTemplate
+    .replace("{surahInfo}", surahInfo)
+    .replace("{arab}", arab)
+    .replace("{translation}", translation)
+    .replace("{latinSegment}", latinSegment);
+}
+
+// ─── Progress ────────────────────────────────────────
+async function loadProgress() {
+  try {
+    const resp = await pgrst(`/quran_data?key=eq.${PROGRESS_KEY}&select=data`);
+    const rows = await resp.json();
+    if (rows?.[0]) {
+      const p = rows[0].data;
+      return { current: p.current || 0, total: p.total || 0, completed: p.completed || [] };
+    }
+  } catch {}
+  return { current: 0, total: 0, completed: [] };
 }
 
 async function saveProgress(progress) {
-  if (!supabase) return;
-  await supabase
-    .from("quran_data")
-    .upsert({
-      key: PROGRESS_KEY,
-      data: progress,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "key", ignoreDuplicates: false });
+  try {
+    await pgrst(`/quran_data`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates" },
+      body: JSON.stringify({ key: PROGRESS_KEY, data: progress, updated_at: new Date().toISOString() }),
+    });
+  } catch {}
 }
 
-async function getAnalysisExists(surah, ayat, lang) {
-  if (!supabase) return false;
-  const { data, error } = await supabase
-    .from("analysis")
-    .select("id")
-    .eq("surah", surah)
-    .eq("ayat", ayat)
-    .eq("lang", lang)
-    .maybeSingle();
-  if (error) return false;
-  return !!data;
+// ─── Check if analysis exists ────────────────────────
+async function analysisExists(surah, ayat, lang) {
+  try {
+    const resp = await pgrst(`/analysis?surah=eq.${surah}&ayat=eq.${ayat}&lang=eq.${lang}&select=id`);
+    const data = await resp.json();
+    return data.length > 0;
+  } catch {
+    return false;
+  }
 }
 
+// ─── Main Handler ────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (!supabase) return res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" });
-  if (!DEEPSEEK_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not set" });
 
-  // Allow resetting progress
-  let body = {};
-  try { body = req.body || {}; } catch {}
-  const resetTo = body.reset !== undefined ? parseInt(body.reset, 10) : null;
-  if (resetTo !== null && !isNaN(resetTo) && resetTo >= 0) {
-    await saveProgress({ current: resetTo, total: 12472 });
-    return res.status(200).json({ ok: true, message: "Progress reset to index " + resetTo, progress: { current: resetTo, total: 12472 } });
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  if (!DEEPSEEK_KEY) {
+    return res.status(500).json({ error: "VITE_DEEPSEEK_API_KEY not set" });
   }
-  
-  const forceReanalyze = body.force === true;
 
   try {
-    // Load data & progress
-    const quranData = await loadQuranData();
-    if (!quranData) return res.status(404).json({ error: "Quran data not found. Sync quran data first." });
+    const { force } = req.body || {};
 
+    // Load Quran data
+    const quran = await getQuranData();
+    const surahs = quran.surahs;
+
+    // Load progress
     let progress = await loadProgress();
 
-    // Build full task list
-    if (progress.total === 0) {
-      let total = 0;
-      for (const s of quranData.surahs) {
-        for (const a of s.ayat) {
-          total += 2; // ID + EN
-        }
-      }
-      progress.total = total;
+    // Rebuild task list if needed
+    if (!progress.total) {
+      const surahsAll = surahs.map((s) => s.nomor);
+      const totalTasks = surahs.reduce((sum, s) => sum + s.ayat.length * 2, 0);
+      progress.total = totalTasks;
+      progress.completed = []; // will be [[{surah, ayat, lang}, ...]]
       await saveProgress(progress);
     }
 
-    // Find next BATCH tasks
-    const tasks = [];
-    let idx = 0;
-    for (const s of quranData.surahs) {
-      for (const a of s.ayat) {
-        for (const lang of ["id", "en"]) {
-          if (tasks.length >= BATCH) break;
-          if (idx < progress.current) { idx++; continue; }
-          const exists = forceReanalyze ? false : await getAnalysisExists(s.nomor, a.nomor, lang);
-          if (!exists) {
-            const arab = a.teksArab || "";
-            const translation = lang === "en" && a.teksInggris ? a.teksInggris : a.teksIndonesia || "";
-            const latinSegment = a.teksLatin ? "**Latin:** " + a.teksLatin + "\n\n" : "";
-            const surahInfo = "**Surah:** " + (s.nomor || "") + " - Ayat " + (a.nomor || "") + "\n\n";
-            const prompt = (lang === "en" ? PROMPT_EN : PROMPT_ID)
-              .replace("{surahInfo}", surahInfo)
-              .replace("{arab}", arab)
-              .replace("{translation}", translation)
-              .replace("{latinSegment}", latinSegment);
+    // Find next tasks
+    const allTasks = buildTasks(surahs, progress);
 
-            tasks.push({ surah: s.nomor, ayat: a.nomor, lang, arab, prompt });
-          }
-          idx++;
-        }
-        if (tasks.length >= BATCH) break;
-      }
-      if (tasks.length >= BATCH) break;
+    // Get BATCH tasks
+    const batch = allTasks.slice(0, BATCH);
+    if (batch.length === 0) {
+      return res.status(200).json({ ok: true, done: true, message: "All analysis complete!" });
     }
 
-    if (tasks.length === 0) {
-      return res.status(200).json({
-        ok: true, message: "Semua ayat sudah dianalisa!",
-        progress: { current: progress.total, total: progress.total },
-        done: true,
-      });
-    }
-
-    // Process tasks
     const results = [];
-    for (const task of tasks) {
-      const aiRes = await fetch(DEEPSEEK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + DEEPSEEK_KEY,
-        },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content: task.lang === "en"
-                ? "You are an expert Qur'anic tafsir assistant. Only answer about the given verse, nahw, sarf, balaghah, and tafsir. Answer directly without preamble or closing."
-                : "Kamu adalah asisten ahli tafsir Al-Qur'an. Jawab langsung tanpa pendahuluan atau penutup.",
-            },
-            { role: "user", content: task.prompt },
-          ],
-          max_tokens: 4000,
-          temperature: 0.3,
-        }),
-      });
+    // Ensure completed is an array
+    if (!Array.isArray(progress.completed)) progress.completed = [];
 
-      if (!aiRes.ok) {
-        const err = await aiRes.text().catch(() => "");
-        results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "error", error: err.slice(0,200) });
-        await new Promise(r => setTimeout(r, 3000));
+    for (const task of batch) {
+      // Skip if already exists (unless force)
+      if (!force) {
+        const exists = await analysisExists(task.surah, task.ayat, task.lang);
+        if (exists) {
+          results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "already_exists" });
+          progress.current++;
+          await saveProgress(progress);
+          continue;
+        }
+      }
+
+      // Find surah info
+      const surah = surahs.find((s) => s.nomor === task.surah);
+
+      // Build prompt & call DeepSeek
+      const prompt = buildPrompt(task, surah);
+      let content;
+      try {
+        content = await askDeepSeek(prompt);
+      } catch (e) {
+        results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "deepseek_error", error: e.message });
         continue;
       }
 
-      const aiData = await aiRes.json();
-      const content = aiData.choices?.[0]?.message?.content || "";
-
-      // Save to Supabase
+      // Save to PostgREST
       try {
-        const { error } = await supabase.from("analysis").upsert({
-          surah: task.surah,
-          ayat: task.ayat,
-          lang: task.lang,
-          content,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "surah,ayat,lang", ignoreDuplicates: false });
-
-        if (error) throw error;
+        await pgrst("/analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates" },
+          body: JSON.stringify({
+            surah: task.surah,
+            ayat: task.ayat,
+            lang: task.lang,
+            content,
+            updated_at: new Date().toISOString(),
+          }),
+        });
         results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "ok" });
       } catch (e) {
         results.push({ surah: task.surah, ayat: task.ayat, lang: task.lang, status: "save_error", error: e.message });
@@ -225,7 +245,7 @@ export default async function handler(req, res) {
       // Only advance progress on success
       progress.current++;
       await saveProgress(progress);
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
     }
 
     return res.status(200).json({

@@ -1,5 +1,5 @@
 // API /api/analysis — simpan & baca analisa ayat via PostgREST on-premise
-const PGREST_URL = "http://124.156.205.118:3001";
+const PGREST_URL = "http://124.156.205.118:3000";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");

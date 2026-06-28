@@ -1,7 +1,7 @@
 // Shared auth helpers — JWT + PostgREST user storage
 import { createHmac, randomUUID, randomBytes, timingSafeEqual } from "crypto";
 
-const PGREST_URL = "http://124.156.205.118";
+const PGREST_URL = "http://124.156.205.118:3001";
 const API_KEY = process.env.VITE_DEEPSEEK_API_KEY || process.env.SMTP2GO_API_KEY || "dev-secret";
 
 // ─── PostgREST fetch helper ──────────────────────────

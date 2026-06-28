@@ -1,7 +1,7 @@
 // POST /api/fill-analysis — generate analysis untuk ayat yang belum ada via PostgREST
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || process.env.VITE_DEEPSEEK_API_KEY;
-const PGREST_URL = "http://124.156.205.118:3000";
+const PGREST_URL = "https://pgrest.xerpium.com/quran";
 
 const BATCH = 1; // 1 ayat per panggilan biar cepet
 const PROGRESS_KEY = "analysis_progress";

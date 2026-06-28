@@ -1,5 +1,5 @@
 // GET /api/quran-data — serve full Quran data from PostgREST
-const PGREST_URL = "http://124.156.205.118:3000";
+const PGREST_URL = "https://pgrest.xerpium.com/quran";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");

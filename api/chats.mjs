@@ -1,7 +1,7 @@
 // /api/chats — GET shared chats for an ayat, POST new message (via PostgREST)
 import { verifyJWT } from "./_auth.mjs";
 
-const PGREST_URL = "http://124.156.205.118:3000";
+const PGREST_URL = "https://pgrest.xerpium.com/quran";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
